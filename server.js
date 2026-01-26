@@ -29,19 +29,37 @@ db.connect((err) => {
 });
 
 // 2. API สมัครสมาชิก
-app.post('/api/signup', (req, res) => {
-    const { first_name, last_name, email, password } = req.body;
-    if (!email || !password || !first_name || !last_name) {
-        return res.status(400).send('กรุณากรอกข้อมูลให้ครบ');
-    }
-    const sql = 'INSERT INTO users (first_name, last_name, email, password) VALUES (?, ?, ?, ?)';
-    db.query(sql, [first_name, last_name, email, password], (err, result) => {
-        if (err) {
-            console.error(err);
-            res.status(500).send('Error Registering');
-        } else {
-            res.status(200).send('User registered');
+app.post('/login', (req, res) => {
+    const { email, password } = req.body;
+    
+    // 1. เช็คว่ามีอีเมลนี้ไหม
+    const sql = "SELECT * FROM users WHERE email = ?";
+    db.execute(sql, [email], (err, results) => {
+        if (err) return res.json({ status: 'error', message: err });
+
+        // ถ้าหาอีเมลไม่เจอ (Users length เป็น 0)
+        if (results.length === 0) {
+            return res.json({ 
+                status: 'error', 
+                target: 'email', // <--- บอกว่าผิดที่ email
+                message: 'อีเมลนี้ยังไม่เคยสมัครสมาชิก' 
+            });
         }
+
+        // 2. ถ้าเจออีเมล ก็มาเช็ครหัสผ่านต่อ
+        const user = results[0];
+        // (สมมติว่าคุณใช้ bcrypt.compare ถ้าไม่ได้ใช้ก็เทียบ user.password === password)
+        // bcrypt.compare(password, user.password, ...
+        if (password !== user.password) { // <-- แก้ตรงนี้ตามวิธีเช็ครหัสของคุณ
+            return res.json({ 
+                status: 'error', 
+                target: 'password', // <--- บอกว่าผิดที่ password
+                message: 'รหัสผ่านไม่ถูกต้อง' 
+            });
+        }
+
+        // 3. ถ้าผ่านหมด
+        res.json({ status: 'ok', message: 'Login สำเร็จ', user_id: user.id });
     });
 });
 

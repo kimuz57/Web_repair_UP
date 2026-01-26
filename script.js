@@ -123,39 +123,55 @@ function handleSignup(e) {
 // ================================
 // ฟังก์ชัน Login (เชื่อม Server)
 // ================================
-function handleLogin(e) {
-    e.preventDefault();
-    
-    const inputs = e.target.querySelectorAll('input');
-    // หมายเหตุ: เช็คลำดับ input ใน html หน้า Login ให้ดี 
-    // ถ้าช่องแรกเป็น Email คือ index 0, ช่องสอง Password คือ index 1
-    const email = inputs[0].value; 
-    const password = inputs[1].value;
+function handleLogin(event) {
+    event.preventDefault();
 
-    fetch('http://localhost:3000/api/login', {
+    // 1. ดึงค่าจาก id ที่เราเพิ่งเติมไป
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    // 2. รีเซ็ต Error เก่าให้หายไปก่อน (ซ่อนตัวแดง)
+    const emailError = document.getElementById('email-error');
+    const passError = document.getElementById('password-error');
+    
+    emailError.style.display = 'none';
+    passError.style.display = 'none';
+    emailError.innerText = '';
+    passError.innerText = '';
+
+    // 3. ส่งข้อมูลไปเช็คที่ Server
+    fetch('https://ชื่อ-app-ของคุณ.onrender.com/login', { // <-- อย่าลืมเปลี่ยนลิงก์
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
     })
     .then(response => response.json())
     .then(data => {
-        if (data.message === 'Login successful') {
+        if (data.status === 'ok') {
+            // ล็อกอินผ่าน
+            alert('เข้าสู่ระบบสำเร็จ!');
+            localStorage.setItem('token', data.token);
             localStorage.setItem('user_id', data.user.id);
-            alert("🎉 ยินดีต้อนรับคุณ " + data.user.first_name);
-            
-            // ปรับ Navbar
-            document.getElementById('nav-login').style.display = 'none';
-            document.getElementById('nav-signup').style.display = 'none';
-            document.getElementById('nav-logout').style.display = 'block';
+            localStorage.setItem('role', data.user.role);
             
             showPage('dashboard-page');
+            checkLoginStatus(); // อัปเดตเมนู
         } else {
-            alert("❌ อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+            // ล็อกอินไม่ผ่าน -> เช็คว่าผิดตรงไหน
+            if (data.target === 'email') {
+                emailError.innerText = data.message; // ใส่ข้อความ
+                emailError.style.display = 'block';  // โชว์ตัวแดง
+            } else if (data.target === 'password') {
+                passError.innerText = data.message;  // ใส่ข้อความ
+                passError.style.display = 'block';   // โชว์ตัวแดง
+            } else {
+                alert(data.message); // กรณี Error อื่นๆ
+            }
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert("Login ไม่สำเร็จ (ตรวจสอบ Server)");
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อ Server');
     });
 }
 

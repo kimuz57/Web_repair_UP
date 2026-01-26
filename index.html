@@ -101,15 +101,18 @@
                         <label>อีเมล / Email</label>
                         <div class="input-field">
                             <i class="fas fa-envelope"></i>
-                            <input type="email" placeholder="example@up.ac.th" required>
+                            <input type="email" id="login-email" placeholder="example@up.ac.th" required>
                         </div>
+                        <small id="email-error" style="color: #dc3545; display: none; margin-top: 5px; font-size: 0.9em;"></small>
                     </div>
+
                     <div class="input-group">
                         <label>รหัสผ่าน / Password</label>
                         <div class="input-field">
                             <i class="fas fa-lock"></i>
-                            <input type="password" placeholder="รหัสผ่าน" required>
+                            <input type="password" id="login-password" placeholder="รหัสผ่าน" required>
                         </div>
+                        <small id="password-error" style="color: #dc3545; display: none; margin-top: 5px; font-size: 0.9em;"></small>
                     </div>
                     
                     <div class="options">
