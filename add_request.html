@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แจ้งซ่อมใหม่ - กองอาคารสถานที่</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg">
+    <nav class="navbar">
+        <div class="logo">
+            <img src="img/logo.png" alt="logo">
+             <div class="logo-text">
+                <span>กองอาคารสถานที่</span>
+                <span class="up">มหาวิทยาลัยพะเยา</span>
+             </div>
+        </div>
+        <div class="menu-toggle" onclick="toggleMenu()"><i class="fas fa-bars"></i></div>
+        <ul class="nav-links" id="nav-menu">
+            <li><a href="index.html">หน้าแรก</a></li>
+            <li><a href="dashboard.html">รายการแจ้งซ่อม</a></li>
+            <li id="nav-logout"><a href="#" onclick="logout()">ออกจากระบบ</a></li>
+        </ul>
+    </nav>
+
+    <div class="form-wrapper" style="margin-top: 100px;">
+        <div class="form-container large-form">
+            <div class="form-header-row">
+                <a href="dashboard.html" class="btn-back" style="text-decoration:none;"><i class="fas fa-chevron-left"></i> กลับ</a>
+                <h2>แบบฟอร์มแจ้งซ่อม</h2>
+            </div>
+
+            <form onsubmit="handleSubmitRequest(event)">
+                <div class="input-group">
+                    <label>หัวข้อปัญหา</label>
+                    <input type="text" id="request-title" placeholder="เช่น แอร์ไม่เย็น, ไฟดับ" required class="simple-input">
+                </div>
+
+                <div class="input-group">
+                    <label>สถานที่ / อาคาร</label>
+                    <select id="request-building" required class="simple-input">
+                        <option value="">-- เลือกอาคาร --</option>
+                        <option value="ICT" class="building">ตึก ICT</option>
+                        <option value="CE" class="building">ตึก CE</option>
+                        <option value="PKY" class="building">ตึก PKY</option>
+                        <option value="UB" class="building">ตึก UB</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>รายละเอียดเพิ่มเติม</label>
+                    <textarea id="request-detail" rows="4" placeholder="ระบุรายละเอียดตำแหน่ง หรืออาการให้ชัดเจน" class="simple-input"></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label>รูปภาพประกอบ</label>
+                    <div class="file-upload-box">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>คลิกเพื่อเลือกไฟล์รูปภาพ</p>
+                        <input type="file" id="request-image" accept="image/*">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary full-width">ส่งเรื่องแจ้งซ่อม</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="success-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <i class="fas fa-check-circle success-icon"></i>
+            <h3>บันทึกข้อมูลสำเร็จ</h3>
+            <p>เจ้าหน้าที่ได้รับเรื่องแจ้งซ่อมของท่านแล้ว</p>
+            <button onclick="closeModal()" class="btn-primary">ตกลง</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบแจ้งซ่อม - กองอาคารสถานที่ มหาวิทยาลัยพะเยา</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg">
+    <nav class="navbar">
+        <div class="logo">
+            <img src="img/logo.png" alt="logo">
+             <div class="logo-text">
+                <span>กองอาคารสถานที่</span>
+                <span class="up">มหาวิทยาลัยพะเยา</span>
+             </div>
+        </div>
+        
+        <div class="menu-toggle" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </div>
+        
+        <ul class="nav-links" id="nav-menu">
+            <li><a href="index.html">หน้าแรก</a></li>
+            <li id="nav-login"><a href="login.html">เข้าสู่ระบบ</a></li>
+            <li id="nav-signup"><a href="signup.html">ลงทะเบียน</a></li>
+            <li id="nav-logout" style="display: none;">
+                <a href="#" onclick="logout()">ออกจากระบบ</a>
+            </li>
+        </ul>
+    </nav>
+
+        <div class="form-wrapper">
+            <div class="form-container">
+                <div class="header-text">
+                    <h2>เข้าสู่ระบบ</h2>
+                    <p>ระบบแจ้งซ่อมออนไลน์</p>
+                </div>
+                
+                <form onsubmit="handleLogin(event)">
+                    <div class="input-group">
+                        <label>อีเมล / Email</label>
+                        <div class="input-field">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="login-email" placeholder="example@up.ac.th" required>
+                        </div>
+                        <div id="resend-container" style="text-align: right;"></div>                      
+                    </div>
+
+                    <div class="input-group">
+                        <label>รหัสผ่าน / Password</label>
+                        <div class="input-field">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="login-password" placeholder="รหัสผ่าน" required>
+                        </div>
+                        <small id="email-error" style="color: #dc3545; display: none; margin-top: 5px; font-size: 0.9em;"></small>
+                        <small id="password-error" style="color: #dc3545; display: none; margin-top: 5px; font-size: 0.9em;"></small>
+                    </div>
+                    
+                    <div class="options">
+                        <label><input type="checkbox"> จำรหัสผ่าน</label>
+                        <a href="#">ลืมรหัสผ่าน?</a>
+                    </div>
+
+                    <button type="submit" class="btn-primary full-width">เข้าสู่ระบบ</button>
+                    <p class="switch-page">ยังไม่มีบัญชี? <a href="signup.html">ลงทะเบียน</a></p>
+                </form>
+            </div>
+        </div>
+
+    <footer id="contact-footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <h4>ติดต่อเรา</h4>
+                <p>กองอาคารสถานที่ มหาวิทยาลัยพะเยา</p>
+                <p>19 หมู่ 2 ตำบลแม่กา อำเภอเมือง จังหวัดพะเยา 56000</p>
+            </div>
+            <div class="footer-col">
+                <h4>ช่องทางติดต่อ</h4>
+                <p><i class="fas fa-phone"></i> 054-466-666 ต่อ 1060</p>
+                <p><i class="fas fa-envelope"></i> Building@up.ac.th</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 University of Phayao. All Rights Reserved.
+        </div>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>

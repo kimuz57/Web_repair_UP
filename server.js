@@ -1,126 +1,267 @@
 require('dotenv').config();
 
+// ==========================================
+// 1. IMPORT & SETUP
+// ==========================================
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
-const bodyParser = require('body-parser');
+const multer = require('multer');
 const path = require('path');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
-
+app.use(express.json()); // ใช้แทน body-parser
 app.use(express.static(__dirname)); 
+app.use('/uploads', express.static('uploads'));
 
-// 1. ตั้งค่าการเชื่อมต่อ Database ใข้ dotenv เพื่อดึงค่าจาก .env กันรหัสผ่านหลุด
+// ==========================================
+// 2. CONFIGURATION (ตั้งค่าระบบ)
+// ==========================================
+
+// 📂 ตั้งค่าที่เก็บรูปภาพ (Multer)
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, 'img-' + Date.now() + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage: storage });
+
+// 📧 ตั้งค่าอีเมล (Nodemailer)
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'Ma7012015@gmail.com', // อีเมลของคุณ
+        pass: 'baeu unfg dfbi dooc'  // App Password ของคุณ
+    }
+});
+
+// 🗄️ เชื่อมต่อ Database
 const db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASS || '',
+    database: process.env.DB_NAME || 'repair_db' // ❌ เช็คชื่อ DB ให้ถูกนะครับ
 });
-
+app.use(express.static(__dirname));
 db.connect((err) => {
-    if (err) {
-        console.error('❌ เชื่อมต่อ Database ไม่สำเร็จ:', err);
-        return;
-    }
-    console.log('✅ เชื่อมต่อ MySQL สำเร็จแล้ว!');
+    if (err) console.error('❌ เชื่อมต่อ Database ไม่สำเร็จ:', err);
+    else console.log('✅ เชื่อมต่อ MySQL สำเร็จแล้ว!');
 });
 
-// 2. API สมัครสมาชิก
+// ==========================================
+// 3. API ROUTES (ทางเข้าข้อมูล)
+// ==========================================
+
+// --- สมัครสมาชิก (Register) ---
+app.post('/api/signup', (req, res) => {
+    const { email, password, first_name, last_name } = req.body;
+
+    // 1. เช็คอีเมลซ้ำ
+    db.query('SELECT email FROM users WHERE email = ?', [email], (err, results) => {
+        if (err) return res.json({ status: 'error', message: err.message });
+        if (results.length > 0) return res.json({ status: 'error', message: 'อีเมลนี้ถูกใช้งานแล้ว' });
+
+        // 2. สร้าง Token
+        const token = crypto.randomBytes(32).toString('hex');
+
+        // 3. บันทึก (is_verified = 0)
+        const sql = 'INSERT INTO users (email, password, first_name, last_name, verification_token, is_verified) VALUES (?, ?, ?, ?, ?, 0)';
+        
+        db.query(sql, [email, password, first_name, last_name, token], (err, result) => {
+            if (err) return res.json({ status: 'error', message: 'สมัครสมาชิกไม่สำเร็จ' });
+
+            // 4. ส่งอีเมล (ใช้ localhost เพื่อความชัวร์)
+            const verifyLink = `http://192.168.1.180:3000/verify?token=${token}`;
+
+            const mailOptions = {
+                from: 'ระบบแจ้งซ่อม <no-reply@up.ac.th>',
+                to: email,
+                subject: '📧 ยืนยันการสมัครสมาชิก',
+                html: `
+                    <h3>ยินดีต้อนรับคุณ ${first_name}</h3>
+                    <p>กรุณากดลิงก์เพื่อยืนยันตัวตน:</p>
+                    <a href="${verifyLink}" style="background: #6a1b9a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">ยืนยันอีเมล</a>
+                `
+            };
+
+            transporter.sendMail(mailOptions, (error) => {
+                if (error) console.log('ส่งเมลไม่ผ่าน:', error);
+                res.json({ status: 'ok', message: 'สมัครสำเร็จ! กรุณาเช็คอีเมลเพื่อยืนยันตัวตน' });
+            });
+        });
+    });
+});
+
+// --- เข้าสู่ระบบ (Login) ---
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     
-    // 1. เช็คว่ามีอีเมลนี้ไหม
-    const sql = "SELECT * FROM users WHERE email = ?";
-    db.execute(sql, [email], (err, results) => {
-        if (err) return res.json({ status: 'error', message: err });
+    db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
+        if (err || results.length === 0) return res.json({ status: 'error', message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
 
-        // ถ้าหาอีเมลไม่เจอ (Users length เป็น 0)
-        if (results.length === 0) {
-            return res.json({ 
-                status: 'error', 
-                target: 'email', // <--- บอกว่าผิดที่ email
-                message: 'อีเมลนี้ยังไม่เคยสมัครสมาชิก' 
-            });
-        }
-
-        // 2. ถ้าเจออีเมล ก็มาเช็ครหัสผ่านต่อ
         const user = results[0];
-        // (สมมติว่าคุณใช้ bcrypt.compare ถ้าไม่ได้ใช้ก็เทียบ user.password === password)
-        // bcrypt.compare(password, user.password, ...
-        if (password !== user.password) { // <-- แก้ตรงนี้ตามวิธีเช็ครหัสของคุณ
+        if (password !== user.password) return res.json({ status: 'error', message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
+
+        // 🔥 เช็คยืนยันตัวตน
+        if (user.is_verified === 0) {
             return res.json({ 
                 status: 'error', 
-                target: 'password', // <--- บอกว่าผิดที่ password
-                message: 'รหัสผ่านไม่ถูกต้อง' 
+                message: 'กรุณายืนยันอีเมลก่อนเข้าใช้งาน',
+                needs_verify: true // ส่งรหัสบอกหน้าบ้านให้โชว์ปุ่ม Resend
             });
         }
 
-        // 3. ถ้าผ่านหมด
-        res.json({ status: 'ok', message: 'Login สำเร็จ', user_id: user.id });
+        res.json({ status: 'ok', user: user });
     });
 });
 
-// 3. API เข้าสู่ระบบ
-app.post('/api/login', (req, res) => {
-    const { email, password } = req.body;
-    const sql = 'SELECT * FROM users WHERE email = ? AND password = ?';
-    db.query(sql, [email, password], (err, results) => {
-        if (err) {
-            res.status(500).send('Database Error');
-        } else if (results.length > 0) {
-            res.status(200).json({ message: 'Login successful', user: results[0] });
-        } else {
-            res.status(401).send('Incorrect email or password');
-        }
-    });
-});
-
-// 4. API รับเรื่องแจ้งซ่อม (Add Request)
-app.post('/api/requests', (req, res) => {
-    // รับค่าที่ส่งมาจากหน้าเว็บ
+// --- แจ้งซ่อม (Add Request) ---
+app.post('/api/requests', upload.single('image'), (req, res) => {
     const { user_id, problem_title, building, detail } = req.body;
+    const image_path = req.file ? req.file.filename : null; // รับชื่อไฟล์
 
-    // เช็คข้อมูลเบื้องต้น
-    if (!user_id || !problem_title || !building) {
-        return res.status(400).send('ข้อมูลไม่ครบถ้วน');
-    }
-
-    // เตรียมคำสั่ง SQL (สังเกตว่าเราต้องใส่ user_id ด้วย เพื่อให้รู้ว่าใครแจ้ง)
-    const sql = `
-        INSERT INTO requests (user_id, problem_title, building, detail, status) 
-        VALUES (?, ?, ?, ?, 'received')
-    `;
-
-    db.query(sql, [user_id, problem_title, building, detail], (err, result) => {
-        if (err) {
-            console.error(err);
-            res.status(500).send('บันทึกข้อมูลไม่สำเร็จ');
-        } else {
-            res.status(200).send('บันทึกข้อมูลเรียบร้อย');
-        }
+    const sql = 'INSERT INTO requests (user_id, problem_title, building, detail, status, image_path) VALUES (?, ?, ?, ?, "received", ?)';
+    
+    db.query(sql, [user_id, problem_title, building, detail, image_path], (err) => {
+        if (err) return res.status(500).json({ status: 'error', message: 'บันทึกไม่สำเร็จ' });
+        res.json({ status: 'ok', message: 'แจ้งซ่อมสำเร็จ' });
     });
 });
 
-// 5. API ดึงรายการแจ้งซ่อมทั้งหมด (Get All Requests)
+// --- ดึงรายการแจ้งซ่อม (Get Requests) ---
 app.get('/api/requests', (req, res) => {
-    // ดึงข้อมูลจากตาราง requests เรียงจากใหม่ไปเก่า
-    const sql = 'SELECT * FROM requests ORDER BY created_at DESC';
-    
+    const sql = `SELECT requests.*, users.first_name, users.last_name 
+                 FROM requests JOIN users ON requests.user_id = users.id 
+                 ORDER BY requests.created_at DESC`;
     db.query(sql, (err, results) => {
+        if (err) res.status(500).send('Database Error');
+        else res.json(results);
+    });
+});
+
+// ==========================================
+// 🛠️ Admin อัปเดตสถานะ & ส่งเมลแจ้งจบงาน
+// ==========================================
+app.put('/api/requests/:id/status', (req, res) => {
+    const { status } = req.body;
+    const requestId = req.params.id;
+
+    // 1. อัปเดตสถานะลง Database
+    db.query('UPDATE requests SET status = ? WHERE id = ?', [status, requestId], (err) => {
         if (err) {
             console.error(err);
-            res.status(500).send('Database Error');
-        } else {
-            // ส่งข้อมูลกลับไปเป็น JSON
-            res.json(results);
+            return res.status(500).json({ status: 'error', message: 'Database Error' });
         }
+
+        // 2. เช็คว่าถ้าสถานะเป็น "เสร็จสิ้น" (completed) ให้ส่งเมล
+        if (status === 'completed') {
+            
+            // ดึงข้อมูลอีเมลลูกค้า จากตาราง requests เชื่อมกับ users
+            const sqlGetUser = `
+                SELECT users.email, users.first_name 
+                FROM requests 
+                JOIN users ON requests.user_id = users.id 
+                WHERE requests.id = ?
+            `;
+
+            db.query(sqlGetUser, [requestId], (e, rows) => {
+                if (!e && rows.length > 0) {
+                    const userEmail = rows[0].email;
+                    const userName = rows[0].first_name;
+                    
+                    // ⚠️ แก้เลข IP ตรงนี้ให้เป็นของเครื่องคุณนะครับ (เพื่อให้กดจากมือถือได้)
+                    // เช่น http://192.168.1.180:3000 หรือถ้าเทสแค่ในคอมใช้ http://localhost:3000 ก็ได้
+                    const webLink = `http://192.168.1.180:3000`; 
+
+                    // ส่งอีเมล
+                    transporter.sendMail({
+                        from: 'ระบบแจ้งซ่อม <no-reply@up.ac.th>',
+                        to: userEmail,
+                        subject: '✅ งานซ่อมที่คุณแจ้งเข้ามาเสร็จสิ้นแล้ว (กรุณารีวิว)',
+                        html: `
+                            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px; max-width: 500px;">
+                                <h2 style="color: #2e7d32;">งานซ่อมเสร็จสิ้นแล้ว!</h2>
+                                <p>สวัสดีคุณ <strong>${userName}</strong>,</p>
+                                <p>งานแจ้งซ่อมของคุณได้รับการแก้ไขเรียบร้อยแล้ว</p>
+                                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+                                <p>กรุณากดลิงก์ด้านล่างเพื่อตรวจสอบความเรียบร้อย และให้คะแนนความพึงพอใจ:</p>
+                                
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <a href="${webLink}" style="background-color: #6a1b9a; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;">
+                                        ⭐ ไปที่หน้าเว็บเพื่อรีวิว
+                                    </a>
+                                </div>
+                                
+                                <p style="color: #888; font-size: 12px;">หากกดปุ่มไม่ได้ ให้คลิกที่นี่: <a href="${webLink}">${webLink}</a></p>
+                            </div>
+                        `
+                    }, (mailErr, info) => {
+                        if (mailErr) console.log("❌ ส่งเมลไม่ผ่าน:", mailErr);
+                        else console.log("✅ ส่งเมลเรียบร้อย:", info.response);
+                    });
+                }
+            });
+        }
+
+        // ตอบกลับ Frontend ว่าเรียบร้อย (ไม่ต้องรอส่งเมลเสร็จ)
+        res.json({ status: 'ok', message: 'อัปเดตสถานะสำเร็จ' });
+    });
+});
+// --- รีวิว (Review) ---
+app.post('/api/review', (req, res) => {
+    const { request_id, rating, review_comment } = req.body;
+    const sql = 'UPDATE requests SET rating = ?, review_comment = ? WHERE id = ?';
+    db.query(sql, [rating, review_comment, request_id], (err) => {
+        if (err) return res.status(500).json({ status: 'error' });
+        res.json({ status: 'ok', message: 'ขอบคุณสำหรับการรีวิว!' });
+    });
+});
+
+// --- กดลิงก์ยืนยันอีเมล (Verify Link) ---
+app.get('/verify', (req, res) => {
+    const token = req.query.token;
+    if (!token) return res.send('<h1>❌ ลิงก์ไม่ถูกต้อง</h1>');
+
+    const updateSql = 'UPDATE users SET is_verified = 1, verification_token = NULL WHERE verification_token = ?';
+    db.query(updateSql, [token], (err, result) => {
+        if (err || result.affectedRows === 0) return res.send('<h1>❌ ลิงก์หมดอายุ หรือถูกใช้งานไปแล้ว</h1>');
+        res.send(`
+            <div style="text-align:center; padding:50px; font-family:sans-serif;">
+                <h1 style="color:#2e7d32;">✅ ยืนยันสำเร็จ!</h1>
+                <p>บัญชีของคุณเปิดใช้งานแล้ว</p>
+                <a href="http://192.168.1.180:3000" style="background:#6a1b9a; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">เข้าสู่ระบบ</a>
+            </div>
+        `);
+    });
+});
+
+// --- ส่งอีเมลยืนยันซ้ำ (Resend Verification) ---
+app.post('/api/resend-verification', (req, res) => {
+    const { email } = req.body;
+    db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
+        if (results.length === 0) return res.json({ status: 'error', message: 'ไม่พบอีเมล' });
+
+        const user = results[0];
+        if (user.is_verified === 1) return res.json({ status: 'error', message: 'ยืนยันไปแล้วครับ' });
+
+        const verifyLink = `http://192.168.1.180:3000/verify?token=${user.verification_token}`;
+        transporter.sendMail({
+            from: 'ระบบแจ้งซ่อม', to: email, subject: 'ยืนยันอีเมล (ส่งซ้ำ)',
+            html: `<a href="${verifyLink}">คลิกยืนยันอีเมล</a>`
+        }, (error) => {
+             if (error) return res.json({ status: 'error' });
+             res.json({ status: 'ok', message: 'ส่งอีเมลใหม่แล้ว!' });
+        });
     });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`🚀 เปิดเว็บได้เลยที่ -> http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });

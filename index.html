@@ -13,19 +13,31 @@
     <nav class="navbar">
         <div class="logo">
             <img src="img/logo.png" alt="logo">
-            <!-- <i class="fas fa-building" style="margin-right: 10px;"></i> -->
              <div class="logo-text">
                 <span>กองอาคารสถานที่</span>
                 <span class="up">มหาวิทยาลัยพะเยา</span>
              </div>
-            
         </div>
         
-        <ul class="nav-links">
-            <li><a href="#" onclick="showPage('home-page')">หน้าแรก</a></li>
-            <li id="nav-login"><a href="#" onclick="showPage('login-page')">เข้าสู่ระบบ</a></li>
-            <li id="nav-signup"><a href="#" onclick="showPage('signup-page')" class="btn-nav-highlight">ลงทะเบียน</a></li>
-            <li id="nav-logout" style="display: none;"><a href="#" onclick="logout()">ออกจากระบบ</a></li>
+        <div class="menu-toggle" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </div>
+        
+        <ul class="nav-links" id="nav-menu">
+            <li><a href="index.html">หน้าแรก</a></li>
+
+            <li id="nav-profile" style="display: none;">
+                <a href="#" class="profile-link">
+            <i class="fas fa-user-circle"></i> <span id="user-name-display">User</span>
+                </a>
+            </li>
+
+            <li id="nav-login"><a href="login.html">เข้าสู่ระบบ</a></li>
+            <li id="nav-signup"><a href="signup.html">ลงทะเบียน</a></li>
+    
+            <li id="nav-logout" style="display: none;">
+                <a href="#" onclick="logout()">ออกจากระบบ</a>
+            </li>
         </ul>
     </nav>
 
@@ -38,7 +50,6 @@
                     <img src="img/slide3.jpg">
                     <img src="img/slide4.jpg">
                     <img src="img/slide5.jpg">
-
                 </div>
                 <div class="dots">
                     <span class="dot active"></span>
@@ -46,15 +57,15 @@
                     <span class="dot"></span>
                     <span class="dot"></span>
                     <span class="dot"></span>
-
                 </div>
             
-
             <div class="hero-overlay">
-                <div class="hero-text">
+                
+                <div class="hero-text"> 
+                    <img src="img/up_logo.png" alt="UP Logo" class="hero-logo">
                     <h1>กองอาคารสถานที่ มหาวิทยาลัยพะเยา</h1>
                     <p>Building and Grounds Division University of Phayao</p>
-                    <button class="btn-cta" onclick="showPage('login-page')">เข้าสู่ระบบแจ้งซ่อม</button>
+                    <button class="btn-cta" onclick="handleServiceClick('add_request.html')">แจ้งซ่อม</button>
                 </div>
             </div>
             </div>
@@ -67,14 +78,18 @@
                         <div class="icon-wrapper"><i class="fas fa-tools"></i></div>
                         <h3>แจ้งซ่อมออนไลน์</h3>
                         <p>ระบบแจ้งซ่อมวัสดุ ครุภัณฑ์ และอาคารสถานที่ภายในมหาวิทยาลัย สะดวกรวดเร็ว</p>
-                        <button class="btn-outline" onclick="showPage('login-page')">แจ้งซ่อมทันที</button>
+                        <button class="btn-outline" onclick="handleServiceClick('addrequest.html')">
+                            แจ้งซ่อมทันที
+                        </button>
                     </div>
 
                     <div class="service-box">
                         <div class="icon-wrapper"><i class="fas fa-tasks"></i></div>
                         <h3>ติดตามสถานะ</h3>
                         <p>ตรวจสอบความคืบหน้าของการดำเนินงานซ่อมแซมได้ตลอด 24 ชั่วโมง</p>
-                        <button class="btn-outline" onclick="showPage('login-page')">ดูสถานะ</button>
+                        <button class="btn-outline" onclick="handleServiceClick('dashboard.html')">
+                            ดูสถานะ
+                        </button>
                     </div>
 
                     <div class="service-box">
@@ -87,164 +102,6 @@
             </div>
         </div>
     </section>
-
-    <section id="login-page" class="page">
-        <div class="form-wrapper">
-            <div class="form-container">
-                <div class="header-text">
-                    <h2>เข้าสู่ระบบ</h2>
-                    <p>ระบบแจ้งซ่อมออนไลน์</p>
-                </div>
-                
-                <form onsubmit="handleLogin(event)">
-                    <div class="input-group">
-                        <label>อีเมล / Email</label>
-                        <div class="input-field">
-                            <i class="fas fa-envelope"></i>
-                            <input type="email" id="login-email" placeholder="example@up.ac.th" required>
-                        </div>
-                        <small id="email-error" style="color: #dc3545; display: none; margin-top: 5px; font-size: 0.9em;"></small>
-                    </div>
-
-                    <div class="input-group">
-                        <label>รหัสผ่าน / Password</label>
-                        <div class="input-field">
-                            <i class="fas fa-lock"></i>
-                            <input type="password" id="login-password" placeholder="รหัสผ่าน" required>
-                        </div>
-                        <small id="password-error" style="color: #dc3545; display: none; margin-top: 5px; font-size: 0.9em;"></small>
-                    </div>
-                    
-                    <div class="options">
-                        <label><input type="checkbox"> จำรหัสผ่าน</label>
-                        <a href="#">ลืมรหัสผ่าน?</a>
-                    </div>
-
-                    <button type="submit" class="btn-primary full-width">เข้าสู่ระบบ</button>
-                    <p class="switch-page">ยังไม่มีบัญชี? <a href="#" onclick="showPage('signup-page')">ลงทะเบียน</a></p>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <section id="signup-page" class="page">
-        <div class="form-wrapper">
-            <div class="form-container">
-                <div class="header-text">
-                    <h2>สร้างบัญชีผู้ใช้</h2>
-                    <p>กรอกข้อมูลเพื่อสมัครใช้งาน</p>
-                </div>
-                <form onsubmit="handleSignup(event)">
-                    <div class="input-group">
-                        <label>ชื่อ (First Name)</label>
-                        <input type="text" required class="simple-input">
-                    </div>
-                    <div class="input-group">
-                        <label>นามสกุล (Last Name)</label>
-                        <input type="text" required class="simple-input">
-                    </div>
-                    <div class="input-group">
-                        <label>อีเมล (Email)</label>
-                        <input type="email" required class="simple-input">
-                    </div>
-                    <div class="input-group">
-                        <label>รหัสผ่าน (Password)</label>
-                        <input type="password" required class="simple-input">
-                    </div>
-                    <div class="input-group">
-                        <label>ยืนยันรหัสผ่าน (Confirm Password)</label>
-                        <input type="password" required class="simple-input">
-                    </div>
-                    
-                    <button type="submit" class="btn-primary full-width">สมัครสมาชิก</button>
-                    <p class="switch-page">มีบัญชีอยู่แล้ว? <a href="#" onclick="showPage('login-page')">เข้าสู่ระบบ</a></p>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <section id="dashboard-page" class="page">
-        <div class="container dashboard-container">
-            <div class="dashboard-header">
-                <div>
-                    <h2>รายการแจ้งซ่อม</h2>
-                    <p>ประวัติและสถานะการดำเนินการ</p>
-                </div>
-                <button class="btn-add" onclick="showPage('add-request-page')">
-                    <i class="fas fa-plus-circle"></i> แจ้งซ่อมใหม่
-                </button>
-            </div>
-
-            <div class="tabs">
-                <button class="tab-btn active" onclick="filterStatus('all')">ทั้งหมด</button>
-                <button class="tab-btn" onclick="filterStatus('received')">รับเรื่อง</button>
-                <button class="tab-btn" onclick="filterStatus('progress')">กำลังดำเนินการ</button>
-                <button class="tab-btn" onclick="filterStatus('completed')">เสร็จสิ้น</button>
-            </div>
-
-            <div class="request-list" id="requestList">
-                </div>
-        </div>
-    </section>
-
-    <section id="add-request-page" class="page">
-        <div class="form-wrapper">
-            <div class="form-container large-form">
-                <div class="form-header-row">
-                    <button onclick="showPage('dashboard-page')" class="btn-back"><i class="fas fa-chevron-left"></i> กลับ</button>
-                    <h2>แบบฟอร์มแจ้งซ่อม</h2>
-                </div>
-
-                <form onsubmit="handleSubmitRequest(event)">
-                    <div class="input-group">
-                        <label>หัวข้อปัญหา</label>
-                        <input type="text" placeholder="เช่น แอร์ไม่เย็น, ไฟดับ" required class="simple-input">
-                    </div>
-
-                    <div class="input-group">
-                        <label>สถานที่ / อาคาร</label>
-                        <select required class="simple-input">
-                            <option value="">-- เลือกอาคาร --</option>
-                            <option value="ICT">ตึก ICT</option>
-                            <option value="CE">ตึก CE (วิศวกรรมศาสตร์)</option>
-                            <option value="PKY">ตึก PKY (พยาบาล)</option>
-                            <option value="QS">ตึก QS (ภูกามยาว)</option>
-                        </select>
-                    </div>
-
-                    <div class="input-group">
-                        <label>ผู้แจ้ง</label>
-                        <input type="text" placeholder="ชื่อ-นามสกุล ของท่าน" required class="simple-input">
-                    </div>
-
-                    <div class="input-group">
-                        <label>รายละเอียดเพิ่มเติม</label>
-                        <textarea rows="4" placeholder="ระบุรายละเอียดตำแหน่ง หรืออาการให้ชัดเจน" class="simple-input"></textarea>
-                    </div>
-
-                    <div class="input-group">
-                        <label>รูปภาพประกอบ</label>
-                        <div class="file-upload-box">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>คลิกเพื่อเลือกไฟล์รูปภาพ</p>
-                            <input type="file" accept="image/*">
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn-primary full-width">ส่งเรื่องแจ้งซ่อม</button>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    <div id="success-modal" class="modal">
-        <div class="modal-content">
-            <i class="fas fa-check-circle success-icon"></i>
-            <h3>บันทึกข้อมูลสำเร็จ</h3>
-            <p>เจ้าหน้าที่ได้รับเรื่องแจ้งซ่อมของท่านแล้ว</p>
-            <button onclick="closeModal()" class="btn-primary">ตกลง</button>
-        </div>
-    </div>
 
     <footer id="contact-footer">
         <div class="footer-content">
@@ -263,7 +120,29 @@
             &copy; 2026 University of Phayao. All Rights Reserved.
         </div>
     </footer>
-
+    <div id="review-modal" class="modal">
+        <div class="modal-content">
+            <h3>ให้คะแนนการซ่อมแซม</h3>
+            <p>งานซ่อมนี้เป็นอย่างไรบ้าง?</p>
+            
+            <div class="star-rating">
+                <i class="fas fa-star" onclick="selectStar(1)" id="star-1"></i>
+                <i class="fas fa-star" onclick="selectStar(2)" id="star-2"></i>
+                <i class="fas fa-star" onclick="selectStar(3)" id="star-3"></i>
+                <i class="fas fa-star" onclick="selectStar(4)" id="star-4"></i>
+                <i class="fas fa-star" onclick="selectStar(5)" id="star-5"></i>
+            </div>
+            
+            <textarea id="review-comment" rows="3" placeholder="เขียนความคิดเห็นเพิ่มเติม..." class="simple-input" style="margin-top: 15px;"></textarea>
+            
+            <input type="hidden" id="review-request-id">
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button onclick="closeReviewModal()" class="btn-outline" style="flex: 1;">ยกเลิก</button>
+                <button onclick="submitReview()" class="btn-primary" style="flex: 1;">ส่งรีวิว</button>
+            </div>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายการแจ้งซ่อม - กองอาคารสถานที่</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg">
+    <nav class="navbar">
+        <div class="logo">
+            <img src="img/logo.png" alt="logo">
+             <div class="logo-text">
+                <span>กองอาคารสถานที่</span>
+                <span class="up">มหาวิทยาลัยพะเยา</span>
+             </div>
+        </div>
+        
+        <div class="menu-toggle" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i>
+        </div>
+        
+        <ul class="nav-links" id="nav-menu">
+            <li><a href="index.html">หน้าแรก</a></li>
+            <li id="nav-login"><a href="login.html">เข้าสู่ระบบ</a></li>
+            <li id="nav-signup"><a href="signup.html">ลงทะเบียน</a></li>
+            <li id="nav-logout" style="display: none;">
+                <a href="#" onclick="logout()">ออกจากระบบ</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="container dashboard-container">
+        <div class="dashboard-header">
+            <div>
+                <h2>รายการแจ้งซ่อม</h2>
+                <p>ประวัติและสถานะการดำเนินการ</p>
+            </div>
+            <a href="add_request.html" class="btn-add">
+                <i class="fas fa-plus-circle"></i> <span>แจ้งซ่อมใหม่</span>
+            </a>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="filterStatus('all')">ทั้งหมด</button>
+            <button class="tab-btn" onclick="filterStatus('mine')">👤 รายการของฉัน</button> <button class="tab-btn" onclick="filterStatus('received')">รับเรื่อง</button>
+            <button class="tab-btn" onclick="filterStatus('progress')">กำลังดำเนินการ</button>
+            <button class="tab-btn" onclick="filterStatus('completed')">เสร็จสิ้น</button>
+        </div>
+
+        <div class="request-list" id="requestList">
+            </div>
+    </div>
+
+    <div id="review-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>ให้คะแนนงานซ่อม</h3>
+            <div class="stars" style="margin: 15px 0; font-size: 1.5rem; color: #ddd; cursor: pointer;">
+                <i class="fas fa-star" id="star-1" onclick="selectStar(1)"></i>
+                <i class="fas fa-star" id="star-2" onclick="selectStar(2)"></i>
+                <i class="fas fa-star" id="star-3" onclick="selectStar(3)"></i>
+                <i class="fas fa-star" id="star-4" onclick="selectStar(4)"></i>
+                <i class="fas fa-star" id="star-5" onclick="selectStar(5)"></i>
+            </div>
+            <input type="hidden" id="review-request-id">
+            <textarea id="review-comment" placeholder="เขียนความคิดเห็นเพิ่มเติม..." class="simple-input" rows="3"></textarea>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button onclick="submitReview()" class="btn-primary full-width">ส่งรีวิว</button>
+                <button onclick="closeReviewModal()" class="btn-outline full-width" style="background:#f8f9fa; border:1px solid #ddd;">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <footer id="contact-footer">
+       <div class="footer-bottom">&copy; 2026 University of Phayao.</div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
