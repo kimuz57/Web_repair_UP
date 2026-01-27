@@ -1,15 +1,7 @@
-// ============================================
-// ⚙️ ตั้งค่าระบบ (Configuration)
-// ============================================
-// ⚠️ อย่าลืมแก้ IP ตรงนี้ให้ตรงกับเครื่องคุณ (ipconfig)
+//แก้ IP ตรงนี้ให้ตรงกับเครื่องคุณ (ipconfig)
 const BASE_URL = 'http://192.168.1.180:3000'; 
 
-// ============================================
-// 🏠 ระบบนำทาง (Navigation) & จัดการ Session
-// ============================================
-
 // เช็คสถานะ Login เพื่อปรับ Navbar
-// แก้ฟังก์ชันนี้ใน script.js
 function checkLoginStatus() {
     try {
         console.log("🔍 กำลังเช็คสถานะล็อกอิน...");
@@ -27,12 +19,12 @@ function checkLoginStatus() {
 
         // ถ้าหาปุ่มไม่เจอ ให้จบการทำงาน (กัน Error)
         if (!navLogin || !navSignup || !navLogout) {
-            console.warn("⚠️ หาปุ่ม Navbar ไม่เจอ (อาจจะอยู่หน้านี้ไม่มี Navbar?)");
+            console.warn("⚠️หาปุ่ม Navbar ไม่เจอ (อาจจะอยู่หน้านี้ไม่มี Navbar?)");
             return;
         }
 
         if (user) {
-            console.log("✅ ยืนยัน: ล็อกอินอยู่แล้ว (User ID: " + user.id + ")");
+            console.log("✅ยืนยัน: ล็อกอินอยู่แล้ว (User ID: " + user.id + ")");
             navLogin.style.display = 'none';
             navSignup.style.display = 'none';
             navLogout.style.display = 'block';
@@ -51,7 +43,7 @@ function checkLoginStatus() {
 function logout() {
     localStorage.removeItem('user');
     alert('ออกจากระบบเรียบร้อย');
-    window.location.href = 'index.html'; // ✅ ย้ายกลับหน้าแรก
+    window.location.href = 'index.html'; //ย้ายกลับหน้าแรก
 }
 // ฟังก์ชันสำหรับปุ่มในหน้าแรก (Services)
 function handleServiceClick(destination) {
@@ -59,13 +51,13 @@ function handleServiceClick(destination) {
     const user = localStorage.getItem('user');
 
     if (!user) {
-        // ❌ ถ้ายังไม่ล็อกอิน
+        //ถ้ายังไม่ล็อกอิน
         alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
-        window.location.href = 'login.html'; // ดีดไปหน้า Login
+        window.location.href = 'login.html'; //ไปหน้า Login
     } else {
-        // ✅ ถ้าล็อกอินแล้ว
+        //ถ้าล็อกอินแล้ว
         if (destination.startsWith('#')) {
-            // กรณีเป็น Link ภายในหน้า (เช่น เลื่อนลงไป Footer)
+            // กรณีเป็น Link ภายในหน้า เลื่อนลงไป Footer
             const element = document.querySelector(destination);
             if(element) element.scrollIntoView({ behavior: 'smooth' });
         } else {
@@ -81,10 +73,7 @@ function toggleMenu() {
     if(navMenu) navMenu.classList.toggle('active');
 }
 
-// ============================================
-// 🔐 ระบบสมาชิก (Authentication)
-// ============================================
-
+// ระบบสมาชิก (Authentication)
 // 1. Login
 function handleLogin(event) {
     event.preventDefault();
@@ -108,14 +97,14 @@ function handleLogin(event) {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'ok') {
-            // --- ล็อกอินสำเร็จ ---
+            //ล็อกอินสำเร็จ
             localStorage.setItem('user', JSON.stringify(data.user));
             
-            // ✅ ย้ายไปหน้า Dashboard.html
+            // ย้ายไปหน้า Dashboard.html
             window.location.href = 'dashboard.html'; 
 
         } else {
-            // --- ❌ กรณี Error ---
+            //กรณี Error
             if(emailError) {
                 emailError.innerText = data.message;
                 emailError.style.display = 'block';
@@ -123,7 +112,7 @@ function handleLogin(event) {
                 alert(data.message);
             }
 
-            // เช็คว่าต้องยืนยันตัวตนไหม?
+            // เช็คว่าต้องยืนยันตัวตนไหม
             if (data.needs_verify === true && resendContainer) {
                 resendContainer.innerHTML = `
                     <a href="#" onclick="resendVerification(event)" style="color: #6a1b9a; font-size: 0.8rem; text-decoration: none; margin-top: 10px; display: inline-block;">
@@ -174,7 +163,6 @@ function handleSignup(event) {
     .then(data => {
         if (data.status === 'ok') {
             document.getElementById('signup-success-modal').style.display = 'flex';
-            // เดี๋ยว Modal จะมีปุ่มให้กดไปหน้า login.html เอง หรือจะสั่งย้ายเลยก็ได้
             // window.location.href = 'login.html';
         } else {
             if (data.target === 'email' && emailError) {
@@ -223,10 +211,7 @@ function resendVerification(e) {
     });
 }
 
-// ============================================
-// 🛠️ ระบบแจ้งซ่อม (Dashboard & Requests)
-// ============================================
-
+// ระบบแจ้งซ่อม (Dashboard & Requests)
 // 1. ส่งเรื่องแจ้งซ่อม
 function handleSubmitRequest(e) {
     e.preventDefault();
@@ -234,7 +219,7 @@ function handleSubmitRequest(e) {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
         alert("กรุณาเข้าสู่ระบบก่อนแจ้งซ่อม!");
-        window.location.href = 'login.html'; // ✅ ดีดไปหน้า Login
+        window.location.href = 'login.html'; //ไปหน้า Login
         return;
     }
     const user = JSON.parse(userStr);
@@ -264,7 +249,6 @@ function handleSubmitRequest(e) {
             document.getElementById('success-modal').style.display = 'flex';
             e.target.reset(); 
             resetUploadBox();
-            // รอ User กด OK ใน Modal แล้วค่อยย้ายหน้า หรือย้ายเลยก็ได้
         } else {
             alert("บันทึกไม่สำเร็จ: " + data.message);
         }
@@ -291,7 +275,7 @@ function renderRequests(filterStatus) {
     .then(data => {
         let filteredData;
 
-        // ✅ Logic กรองข้อมูล
+        //Logic กรองข้อมูล
         if (filterStatus === 'mine') {
             if (!currentUser) {
                 listContainer.innerHTML = '<p style="text-align:center;">กรุณาเข้าสู่ระบบ</p>';
@@ -348,7 +332,7 @@ function renderRequests(filterStatus) {
                 }
             }
 
-            // ✅ Admin Controls
+            // Admin Controls
             let adminControls = '';
             if (currentUser && currentUser.role === 'admin') {
                 adminControls = `
@@ -404,7 +388,7 @@ function filterStatus(status) {
     renderRequests(status);
 }
 
-// ✅ อัปเดตสถานะสำหรับ Admin
+//อัปเดตสถานะสำหรับ Admin
 function updateStatus(requestId, newStatus) {
     let statusText = '';
     if(newStatus === 'received') statusText = 'รับเรื่องแล้ว';
@@ -432,10 +416,7 @@ function updateStatus(requestId, newStatus) {
     .catch(err => console.error(err));
 }
 
-// ============================================
-// ⭐ ระบบรีวิว & Modal & สไลด์โชว์
-// ============================================
-
+// ระบบรีวิว & Modal & สไลด์โชว์
 let currentRating = 0;
 
 function openReviewModal(requestId) {
@@ -490,13 +471,12 @@ function submitReview() {
 
 function closeModal() {
     document.getElementById('success-modal').style.display = 'none';
-    // ถ้าอยู่หน้า Add Request แล้วกด OK อาจจะให้ย้ายไป Dashboard
     window.location.href = 'dashboard.html';
 }
 
 function closeSignupModal() {
     document.getElementById('signup-success-modal').style.display = 'none';
-    window.location.href = 'login.html'; // ✅ ไปหน้า Login
+    window.location.href = 'login.html';
 }
 
 function toggleMenu() {
@@ -504,9 +484,7 @@ function toggleMenu() {
     if(navMenu) navMenu.classList.toggle('active');
 }
 
-// ============================================
 // 🚀 เริ่มต้นทำงาน (Main Execution) - สำคัญมาก!
-// ============================================
 document.addEventListener('DOMContentLoaded', () => {
     // 1. เช็ค Login
     checkLoginStatus();
@@ -514,7 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. เช็คว่าอยู่หน้าไหน แล้วรันโค้ดของหน้านั้น
     const path = window.location.pathname;
 
-    // --- หน้า Dashboard ---
+    //หน้า Dashboard
     if (path.includes('dashboard.html')) {
         // เช็คก่อนว่าล็อกอินยัง
         if(!localStorage.getItem('user')) {
@@ -525,7 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- หน้าแจ้งซ่อม (Add Request) ---
+    //หน้าแจ้งซ่อม (Add Request)
     if (path.includes('add_request.html')) {
         if(!localStorage.getItem('user')) {
             alert('กรุณาเข้าสู่ระบบ');
@@ -533,45 +511,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- หน้าแรก (Home) ---
+    // หน้าแรก (Home)
     // เช็คหลายแบบเผื่อกรณีเปิด root (/) หรือ index.html
     if (path.includes('index.html') || path === '/' || path.endsWith('/')) {
         startSlideshow(); 
     }
 
-    // ตั้งค่า Image Preview (รันทุกหน้าที่มี input นี้)
+    // ตั้งค่า Image Preview รันทุกหน้าที่มี input นี้
     setupImagePreview();
 });
 
-// แก้ไขฟังก์ชันสไลด์โชว์ (Infinite Loop แบบเนียนๆ)
-// script.js
-
-// ============================================
-// 🎠 สไลด์โชว์แบบ Infinite Loop (วนลูปเนียนตา)
-// ============================================
+// สไลด์โชว์แบบ Infinite Loop พื้นหลัง home page
 function startSlideshow() {
     const slidesContainer = document.querySelector(".slides");
     const dots = document.querySelectorAll(".dot");
     let originalImages = document.querySelectorAll(".slides img"); // รูปชุดเดิม
 
-    // 1. เช็คความพร้อม (ถ้าไม่มีรูป หรือรันไปแล้ว ให้จบ)
+    // 1. เช็คความพร้อม
     if (!slidesContainer || originalImages.length === 0 || document.getElementById('first-clone')) return;
-
     // 2. สร้างร่างแยก (Clone) หัว-ท้าย
     const firstClone = originalImages[0].cloneNode(true);
     const lastClone = originalImages[originalImages.length - 1].cloneNode(true);
 
-    firstClone.id = 'first-clone'; // ตั้งชื่อให้เช็คง่ายๆ
+    firstClone.id = 'first-clone';
     lastClone.id = 'last-clone';
 
     slidesContainer.append(firstClone);   // เอารูปแรก(ปลอม) ไปต่อท้าย
     slidesContainer.prepend(lastClone);   // เอารูปสุดท้าย(ปลอม) มาแปะหน้า
 
-    // ดึงรูปทั้งหมดใหม่ (รวมตัว Clone ที่เพิ่งเพิ่ม)
+    // ดึงรูปทั้งหมดใหม่ รวมตัว Clone ที่เพิ่งเพิ่ม
     const allSlides = document.querySelectorAll(".slides img");
 
     // 3. ตั้งค่าเริ่มต้น
-    let counter = 1; // เริ่มที่ 1 (เพราะ 0 คือรูปสุดท้ายปลอม)
+    let counter = 1; // เริ่มที่ 1 เพราะ 0 คือรูปสุดท้ายปลอม
     const size = 100; // เลื่อนทีละ 100%
     slidesContainer.style.transform = 'translateX(' + (-size * counter) + '%)';
 
@@ -579,7 +551,7 @@ function startSlideshow() {
 
     // ฟังก์ชันเลื่อนภาพ
     const nextSlide = () => {
-        if (counter >= allSlides.length - 1) return; // กันรวน
+        if (counter >= allSlides.length - 1) return;
         slidesContainer.style.transition = "transform 0.5s ease-in-out";
         counter++;
         slidesContainer.style.transform = 'translateX(' + (-size * counter) + '%)';
@@ -587,18 +559,18 @@ function startSlideshow() {
     };
 
     const prevSlide = () => {
-        if (counter <= 0) return; // กันรวน
+        if (counter <= 0) return;
         slidesContainer.style.transition = "transform 0.5s ease-in-out";
         counter--;
         slidesContainer.style.transform = 'translateX(' + (-size * counter) + '%)';
         updateDots();
     };
 
-    // 4. ⭐ พระเอกของงาน: ระบบวาร์ป (Transition End)
+    // 4.Transition End
     slidesContainer.addEventListener('transitionend', () => {
         // ถ้าเลื่อนไปเจอ "รูปแรก(ปลอม)" -> วาร์ปกลับไป "รูปแรก(จริง)"
         if (allSlides[counter].id === 'first-clone') {
-            slidesContainer.style.transition = "none"; // ปิด Animation ชั่วคราว
+            slidesContainer.style.transition = "none"; //ปิด Animation ชั่วคราว
             counter = 1; // ย้ายตำแหน่ง
             slidesContainer.style.transform = 'translateX(' + (-size * counter) + '%)';
         }
@@ -611,11 +583,10 @@ function startSlideshow() {
         }
     });
 
-    // 5. อัปเดตจุด (Dots)
+    // 5.Dots
     const updateDots = () => {
         dots.forEach(dot => dot.classList.remove('active'));
-        
-        // คำนวณ Index ของจุด (ต้องลบ 1 เพราะมี Clone ตัวหน้า)
+        // คำนวณ Index ของจุด ต้องลบ 1 เพราะมี Clone ตัวหน้า
         let dotIndex = counter - 1;
         if (dotIndex < 0) dotIndex = originalImages.length - 1; // กรณีอยู่ที่ clone หน้า
         if (dotIndex >= originalImages.length) dotIndex = 0;    // กรณีอยู่ที่ clone ท้าย
@@ -635,7 +606,7 @@ function startSlideshow() {
         });
     });
 
-    // 7. ระบบสัมผัส (Swipe)
+    // 7. ระบบสัมผัส Swipe
     let startX = 0;
     slidesContainer.addEventListener('touchstart', (e) => {
         startX = e.touches[0].clientX;

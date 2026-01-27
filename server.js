@@ -1,8 +1,6 @@
 require('dotenv').config();
 
-// ==========================================
 // 1. IMPORT & SETUP
-// ==========================================
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
@@ -13,15 +11,12 @@ const crypto = require('crypto');
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // ใช้แทน body-parser
+app.use(express.json());
 app.use(express.static(__dirname)); 
 app.use('/uploads', express.static('uploads'));
 
-// ==========================================
 // 2. CONFIGURATION (ตั้งค่าระบบ)
-// ==========================================
-
-// 📂 ตั้งค่าที่เก็บรูปภาพ (Multer)
+// ตั้งค่าที่เก็บรูปภาพ
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/');
@@ -32,51 +27,46 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// 📧 ตั้งค่าอีเมล (Nodemailer)
+//ตั้งค่าอีเมล (Nodemailer)
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'Ma7012015@gmail.com', // อีเมลของคุณ
-        pass: 'baeu unfg dfbi dooc'  // App Password ของคุณ
+        user: 'Ma7012015@gmail.com',
+        pass: 'baeu unfg dfbi dooc' 
     }
 });
 
-// 🗄️ เชื่อมต่อ Database
+//เชื่อมต่อ Database
 const db = mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASS || '',
-    database: process.env.DB_NAME || 'repair_db' // ❌ เช็คชื่อ DB ให้ถูกนะครับ
+    database: process.env.DB_NAME || 'up_repair_system' //เช็คชื่อ DB ให้ถูกนะครับ
 });
 app.use(express.static(__dirname));
 db.connect((err) => {
-    if (err) console.error('❌ เชื่อมต่อ Database ไม่สำเร็จ:', err);
-    else console.log('✅ เชื่อมต่อ MySQL สำเร็จแล้ว!');
+    if (err) console.error('เชื่อมต่อ Database ไม่สำเร็จ:', err);
+    else console.log('เชื่อมต่อ MySQL สำเร็จแล้ว');
 });
 
-// ==========================================
 // 3. API ROUTES (ทางเข้าข้อมูล)
-// ==========================================
-
-// --- สมัครสมาชิก (Register) ---
+//สมัครสมาชิก
 app.post('/api/signup', (req, res) => {
     const { email, password, first_name, last_name } = req.body;
-
     // 1. เช็คอีเมลซ้ำ
     db.query('SELECT email FROM users WHERE email = ?', [email], (err, results) => {
         if (err) return res.json({ status: 'error', message: err.message });
         if (results.length > 0) return res.json({ status: 'error', message: 'อีเมลนี้ถูกใช้งานแล้ว' });
-
         // 2. สร้าง Token
         const token = crypto.randomBytes(32).toString('hex');
-
         // 3. บันทึก (is_verified = 0)
         const sql = 'INSERT INTO users (email, password, first_name, last_name, verification_token, is_verified) VALUES (?, ?, ?, ?, ?, 0)';
         
         db.query(sql, [email, password, first_name, last_name, token], (err, result) => {
             if (err) return res.json({ status: 'error', message: 'สมัครสมาชิกไม่สำเร็จ' });
 
-            // 4. ส่งอีเมล (ใช้ localhost เพื่อความชัวร์)
+            // 4. ส่งอีเมล ตรงนี้ต้องแก้ URL ให้ตรงกับเครื่องคุณนะครับ
+            //ผมใช้เป็น IP Address ของเครื่องผม เพื่อให้มือถือในวงแลนเดียวกันกดลิงก์ได้
             const verifyLink = `http://192.168.1.180:3000/verify?token=${token}`;
 
             const mailOptions = {
@@ -98,7 +88,7 @@ app.post('/api/signup', (req, res) => {
     });
 });
 
-// --- เข้าสู่ระบบ (Login) ---
+//เข้าสู่ระบบ (Login)
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     
@@ -108,7 +98,7 @@ app.post('/api/login', (req, res) => {
         const user = results[0];
         if (password !== user.password) return res.json({ status: 'error', message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
 
-        // 🔥 เช็คยืนยันตัวตน
+        //เช็คยืนยันตัวตน
         if (user.is_verified === 0) {
             return res.json({ 
                 status: 'error', 
@@ -121,7 +111,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// --- แจ้งซ่อม (Add Request) ---
+//แจ้งซ่อม (Add Request)
 app.post('/api/requests', upload.single('image'), (req, res) => {
     const { user_id, problem_title, building, detail } = req.body;
     const image_path = req.file ? req.file.filename : null; // รับชื่อไฟล์
@@ -134,7 +124,7 @@ app.post('/api/requests', upload.single('image'), (req, res) => {
     });
 });
 
-// --- ดึงรายการแจ้งซ่อม (Get Requests) ---
+//ดึงรายการแจ้งซ่อม จาก Database
 app.get('/api/requests', (req, res) => {
     const sql = `SELECT requests.*, users.first_name, users.last_name 
                  FROM requests JOIN users ON requests.user_id = users.id 
@@ -145,9 +135,8 @@ app.get('/api/requests', (req, res) => {
     });
 });
 
-// ==========================================
-// 🛠️ Admin อัปเดตสถานะ & ส่งเมลแจ้งจบงาน
-// ==========================================
+// Admin อัปเดตสถานะ & ส่งเมลแจ้งจบงาน
+
 app.put('/api/requests/:id/status', (req, res) => {
     const { status } = req.body;
     const requestId = req.params.id;
@@ -161,8 +150,8 @@ app.put('/api/requests/:id/status', (req, res) => {
 
         // 2. เช็คว่าถ้าสถานะเป็น "เสร็จสิ้น" (completed) ให้ส่งเมล
         if (status === 'completed') {
-            
-            // ดึงข้อมูลอีเมลลูกค้า จากตาราง requests เชื่อมกับ users
+
+            // ดึงข้อมูลอีเมลผู้ใช้ จากตาราง requests เชื่อมกับ users
             const sqlGetUser = `
                 SELECT users.email, users.first_name 
                 FROM requests 
@@ -175,7 +164,7 @@ app.put('/api/requests/:id/status', (req, res) => {
                     const userEmail = rows[0].email;
                     const userName = rows[0].first_name;
                     
-                    // ⚠️ แก้เลข IP ตรงนี้ให้เป็นของเครื่องคุณนะครับ (เพื่อให้กดจากมือถือได้)
+                    // แก้เลข IP ตรงนี้ให้เป็นของเครื่องตัวเองนะครับเพื่อให้กดจากมือถือได้ที่อยู่ในแลนวงเดียวกัน (ถ้าเทสแค่ในคอมก็ใช้ localhost ก็ได้)
                     // เช่น http://192.168.1.180:3000 หรือถ้าเทสแค่ในคอมใช้ http://localhost:3000 ก็ได้
                     const webLink = `http://192.168.1.180:3000`; 
 
@@ -209,11 +198,11 @@ app.put('/api/requests/:id/status', (req, res) => {
             });
         }
 
-        // ตอบกลับ Frontend ว่าเรียบร้อย (ไม่ต้องรอส่งเมลเสร็จ)
+        // ตอบกลับ Frontend ว่าเรียบร้อย
         res.json({ status: 'ok', message: 'อัปเดตสถานะสำเร็จ' });
     });
 });
-// --- รีวิว (Review) ---
+//รีวิว (Review)
 app.post('/api/review', (req, res) => {
     const { request_id, rating, review_comment } = req.body;
     const sql = 'UPDATE requests SET rating = ?, review_comment = ? WHERE id = ?';
@@ -223,7 +212,7 @@ app.post('/api/review', (req, res) => {
     });
 });
 
-// --- กดลิงก์ยืนยันอีเมล (Verify Link) ---
+//กดลิงก์ยืนยันอีเมล (Verify Link)
 app.get('/verify', (req, res) => {
     const token = req.query.token;
     if (!token) return res.send('<h1>❌ ลิงก์ไม่ถูกต้อง</h1>');
@@ -241,14 +230,14 @@ app.get('/verify', (req, res) => {
     });
 });
 
-// --- ส่งอีเมลยืนยันซ้ำ (Resend Verification) ---
+//ส่งอีเมลยืนยันซ้ำ
 app.post('/api/resend-verification', (req, res) => {
     const { email } = req.body;
     db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
         if (results.length === 0) return res.json({ status: 'error', message: 'ไม่พบอีเมล' });
 
         const user = results[0];
-        if (user.is_verified === 1) return res.json({ status: 'error', message: 'ยืนยันไปแล้วครับ' });
+        if (user.is_verified === 1) return res.json({ status: 'error', message: 'ยืนยันไปแล้ว' });
 
         const verifyLink = `http://192.168.1.180:3000/verify?token=${user.verification_token}`;
         transporter.sendMail({
