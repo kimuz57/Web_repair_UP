@@ -277,21 +277,21 @@ app.post('/api/resend-verification', (req, res) => {
 });
 
 // 👇 เพิ่มไว้ท้ายไฟล์ ก่อน app.listen
-app.get('/test-email', (req, res) => {
-    transporter.sendMail({
-        from: `Test <${process.env.EMAIL_USER}>`,
-        to: process.env.EMAIL_USER, // ส่งเข้าเมลตัวเองนี่แหละ
-        subject: 'ทดสอบการส่งเมลจาก Render',
-        text: 'ถ้าได้รับเมลนี้ แสดงว่าระบบส่งเมลใช้งานได้แล้ว! 🎉'
-    }, (err, info) => {
-        if (err) {
-            console.error("❌ ส่งไม่ผ่าน:", err);
-            return res.status(500).send(`<h1>ส่งไม่ผ่าน 😭</h1><pre>${err.message}</pre>`);
-        }
-        console.log("✅ ส่งสำเร็จ:", info);
-        res.send(`<h1>ส่งสำเร็จ! 🎉</h1><pre>${JSON.stringify(info, null, 2)}</pre>`);
-    });
-});
+// app.get('/test-email', (req, res) => {
+//     transporter.sendMail({
+//         from: `Test <${process.env.EMAIL_USER}>`,
+//         to: process.env.EMAIL_USER, // ส่งเข้าเมลตัวเองนี่แหละ
+//         subject: 'ทดสอบการส่งเมลจาก Render',
+//         text: 'ถ้าได้รับเมลนี้ แสดงว่าระบบส่งเมลใช้งานได้แล้ว! 🎉'
+//     }, (err, info) => {
+//         if (err) {
+//             console.error("❌ ส่งไม่ผ่าน:", err);
+//             return res.status(500).send(`<h1>ส่งไม่ผ่าน 😭</h1><pre>${err.message}</pre>`);
+//         }
+//         console.log("✅ ส่งสำเร็จ:", info);
+//         res.send(`<h1>ส่งสำเร็จ! 🎉</h1><pre>${JSON.stringify(info, null, 2)}</pre>`);
+//     });
+// });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
