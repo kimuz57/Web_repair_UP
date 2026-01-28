@@ -30,8 +30,8 @@ const upload = multer({ storage: storage });
 //ตั้งค่าอีเมล (Nodemailer)
 const transporter = nodemailer.createTransport({
     host: 'smtp-relay.brevo.com',  // 👈 ต้องเป็นอันนี้
-    port: 587,                     // 👈 ต้องเป็น 587
-    secure: false,
+    port: 465,                     // 👈 ต้องเป็น 587
+    secure: true,              // true สำหรับ 465, false สำหรับอื่นๆ
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
