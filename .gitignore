@@ -3,4 +3,4 @@ node_modules/
 .env
 database.sql
 SQL.sql
-hash_password.js
+hash_passwords.js

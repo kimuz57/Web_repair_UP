@@ -113,6 +113,7 @@ app.post('/api/signup', (req, res) => {
         });
     });
 });
+//เข้าสู่ระบบ (Login)
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
@@ -123,25 +124,6 @@ app.post('/api/login', (req, res) => {
         if (!match) return res.json({ status: 'error', message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
         if (user.is_verified === 0) {
             return res.json({ status: 'error', message: 'กรุณายืนยันอีเมลก่อน', needs_verify: true });
-        }
-        res.json({ status: 'ok', user: user });
-    });
-});
-
-//เข้าสู่ระบบ (Login)
-app.post('/api/login', (req, res) => {
-    const { email, password } = req.body;
-    db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
-        if (err || results.length === 0) return res.json({ status: 'error', message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
-        const user = results[0];
-        if (password !== user.password) return res.json({ status: 'error', message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
-        //เช็คยืนยันตัวตน
-        if (user.is_verified === 0) {
-            return res.json({ 
-                status: 'error', 
-                message: 'กรุณายืนยันอีเมลก่อนเข้าใช้งาน',
-                needs_verify: true // ส่งรหัสบอกหน้าบ้านให้โชว์ปุ่ม Resend
-            });
         }
         res.json({ status: 'ok', user: user });
     });
