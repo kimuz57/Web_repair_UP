@@ -8,6 +8,7 @@ const multer = require('multer');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
 const app = express();
 app.use(cors());
@@ -119,11 +120,18 @@ app.post('/api/login', (req, res) => {
     db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
         if (err || results.length === 0) return res.json({ status: 'error', message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
         const user = results[0];
-        // เช็ครหัสผ่านที่ส่งมา เทียบกับรหัสที่เข้ารหัสไว้ใน DB
-        const match = await bcrypt.compare(password, user.password);
-        if (!match) return res.json({ status: 'error', message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
+        //ใช้ bcrypt.compare เพื่อเช็ครหัสผ่านที่รับมา กับรหัส Hash ใน DB
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.json({ status: 'error', message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
+        }
+        // เช็คการยืนยันตัวตน (ถ้ามี)
         if (user.is_verified === 0) {
-            return res.json({ status: 'error', message: 'กรุณายืนยันอีเมลก่อน', needs_verify: true });
+            return res.json({ 
+                status: 'error', 
+                message: 'กรุณายืนยันอีเมลก่อนเข้าใช้งาน',
+                needs_verify: true 
+            });
         }
         res.json({ status: 'ok', user: user });
     });
@@ -135,7 +143,6 @@ app.post('/api/requests', upload.single('image'), (req, res) => {
     const image_path = req.file ? req.file.filename : null; // รับชื่อไฟล์
 
     const sql = 'INSERT INTO requests (user_id, problem_title, building, detail, status, image_path) VALUES (?, ?, ?, ?, "received", ?)';
-    
     db.query(sql, [user_id, problem_title, building, detail, image_path], (err) => {
         if (err) return res.status(500).json({ status: 'error', message: 'บันทึกไม่สำเร็จ' });
         res.json({ status: 'ok', message: 'แจ้งซ่อมสำเร็จ' });

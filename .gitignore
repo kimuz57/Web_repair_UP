@@ -1,6 +1,4 @@
 node_modules/
 .vscode/
 .env
-database.sql
-SQL.sql
 hash_passwords.js
