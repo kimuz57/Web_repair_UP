@@ -33,10 +33,9 @@
             </li>
 
             <li id="nav-login"><a href="login.html">เข้าสู่ระบบ</a></li>
-            <li id="nav-signup"><a href="signup.html">ลงทะเบียน</a></li>
-    
             <li id="nav-logout" style="display: none;">
-                <a href="#" onclick="logout()">ออกจากระบบ</a>
+                <a href="javascript:void(0)" onclick="logout()">ออกจากระบบ</a>
+                <!-- <a href="#" onclick="logout()">ออกจากระบบ</a> -->
             </li>
         </ul>
     </nav>
@@ -87,7 +86,7 @@
                         <div class="icon-wrapper"><i class="fas fa-tasks"></i></div>
                         <h3>ติดตามสถานะ</h3>
                         <p>ตรวจสอบความคืบหน้าของการดำเนินงานซ่อมแซมได้ตลอด 24 ชั่วโมง</p>
-                        <button class="btn-outline" onclick="handleServiceClick('dashboard.html')">
+                        <button class="btn-outline" onclick="window.location.href='dashboard.html'">
                             ดูสถานะ
                         </button>
                     </div>

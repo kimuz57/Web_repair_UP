@@ -9,12 +9,33 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
-
+const session = require('express-session');
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname)); 
 app.use('/uploads', express.static('uploads'));
+
+app.use(session({
+    secret: process.env.SESSION_SECRET, // เปลี่ยนเป็นอะไรก็ได้ยาวๆ (หรือใช้ process.env.SESSION_SECRET)
+    resave: false,
+    saveUninitialized: false,
+    cookie: { 
+        secure: false, // ถ้าใช้ https บน Render ให้แก้เป็น true
+        maxAge: 24 * 60 * 60 * 1000 // อายุ Session 1 วัน (หน่วย millisecond)
+    }
+}));
+
+app.post('/api/delete_user', (req, res) => {
+    // เช็คว่ามีข้อมูล user ใน session ไหม (แปลว่า Login หรือยัง)
+    if (!req.session.user) {
+        return res.status(401).send("กรุณา Login ก่อน");
+    }
+    // เช็ค Role จาก session (ปลอดภัย Hacker แก้ไม่ได้)
+    if (req.session.user.role !== 'admin') {
+        return res.status(403).send("ห้ามเข้า! คุณไม่ใช่แอดมิน");
+    }
+});
 
 // 2. CONFIGURATION (ตั้งค่าระบบ)
 // ตั้งค่าที่เก็บรูปภาพ
@@ -30,14 +51,13 @@ const upload = multer({ storage: storage });
 
 //ตั้งค่าอีเมล (Nodemailer)
 const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',  // 👈 ต้องเป็นอันนี้
-    port: 465,                     // 👈 ต้องเป็น 587
-    secure: true,              // true สำหรับ 465, false สำหรับอื่นๆ
+    host: 'smtp.gmail.com',  // 👈 ต้องเป็นอันนี้
+    port: 587,                     // 👈 ต้องเป็น 587
+    secure: false,              // true สำหรับ 465, false สำหรับอื่นๆ
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
-    // แถมตัวนี้ไว้กัน Error เรื่อง Certificate
     tls: {
         rejectUnauthorized: false 
     }
@@ -45,9 +65,9 @@ const transporter = nodemailer.createTransport({
 
 transporter.verify((error, success) => {
     if (error) {
-        console.error("❌ เชื่อมต่อ Server อีเมลไม่สำเร็จ:", error);
+        console.error("เชื่อมต่อ Server อีเมลไม่สำเร็จ:", error);
     } else {
-        console.log("✅ Server อีเมลพร้อมใช้งานแล้ว!");
+        console.log("Server อีเมลพร้อมใช้งานแล้ว!");
     }
 });
 
@@ -56,7 +76,7 @@ const db = mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'up_repair_system' //เช็คชื่อ DB ให้ถูกนะครับ
+    database: process.env.DB_NAME || 'up_repair_system' //เช็คชื่อ DB ให้ถูก
 });
 app.use(express.static(__dirname));
 db.connect((err) => {
@@ -65,55 +85,6 @@ db.connect((err) => {
 });
 
 // 3. API ROUTES (ทางเข้าข้อมูล)
-//สมัครสมาชิก
-app.post('/api/signup', (req, res) => {
-    const { email, password, first_name, last_name } = req.body;
-    
-    // 1. เช็คอีเมลซ้ำ
-    db.query('SELECT email FROM users WHERE email = ?', [email], (err, results) => {
-        if (err) return res.json({ status: 'error', message: err.message });
-        if (results.length > 0) return res.json({ status: 'error', message: 'อีเมลนี้ถูกใช้งานแล้ว' });
-
-        // 2. สร้าง Token
-        const token = crypto.randomBytes(32).toString('hex');
-
-        // 3. บันทึก
-        const sql = 'INSERT INTO users (email, password, first_name, last_name, verification_token, is_verified) VALUES (?, ?, ?, ?, ?, 0)';
-        
-        db.query(sql, [email, password, first_name, last_name, token], (err, result) => {
-            if (err) return res.json({ status: 'error', message: 'สมัครสมาชิกไม่สำเร็จ' });
-
-            // 4. ส่งอีเมล
-            // จุดที่ต้องแก้: ถ้าเทสในเครื่องใช้ localhost, ถ้าขึ้น Server ใช้ URL ของ Render
-            // const BASE_URL = 'http://localhost:3000'; 
-            const BASE_URL = 'https://repair-up.onrender.com'; // ใช้บน Server จริง
-            const verifyLink = `${BASE_URL}/verify?token=${token}`;
-
-            const mailOptions = {
-                // 🛠️ แก้ตรงนี้: ใช้ชื่อ Gmail ของเราเป็นผู้ส่ง
-                // ต้องมี <email> ต่อท้ายชื่อเสมอ
-                from: `ระบบแจ้งซ่อม <${process.env.EMAIL_USER}>`, 
-                to: email,
-                subject: '📧 ยืนยันการสมัครสมาชิก',
-                html: `
-                    <h3>ยินดีต้อนรับคุณ ${first_name}</h3>
-                    <p>กรุณากดลิงก์เพื่อยืนยันตัวตน:</p>
-                    <a href="${verifyLink}" style="background: #6a1b9a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">ยืนยันอีเมล</a>
-                `
-            };
-
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    console.log('❌ ส่งเมลไม่ผ่าน:', error); 
-                    // แจ้ง User ว่าสมัครได้แต่ส่งเมลไม่ได้ (อาจจะให้กดส่งใหม่ทีหลัง)
-                    return res.json({ status: 'ok', message: 'สมัครสำเร็จ แต่ส่งอีเมลล้มเหลว (กรุณาติดต่อแอดมินหรือลองใหม่)' });
-                }
-                console.log('✅ ส่งเมลสำเร็จ:', info.response);
-                res.json({ status: 'ok', message: 'สมัครสำเร็จ! กรุณาเช็คอีเมลเพื่อยืนยันตัวตน' });
-            });
-        });
-    });
-});
 //เข้าสู่ระบบ (Login)
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
@@ -125,15 +96,18 @@ app.post('/api/login', (req, res) => {
         if (!isMatch) {
             return res.json({ status: 'error', message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
         }
-        // เช็คการยืนยันตัวตน (ถ้ามี)
-        if (user.is_verified === 0) {
-            return res.json({ 
-                status: 'error', 
-                message: 'กรุณายืนยันอีเมลก่อนเข้าใช้งาน',
-                needs_verify: true 
-            });
-        }
+
         res.json({ status: 'ok', user: user });
+    });
+});
+
+// เปลี่ยนจาก res.redirect เป็น res.json
+app.get('/api/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) return res.status(500).send("Error");
+        
+        res.clearCookie('connect.sid'); // ลบ Cookie
+        res.json({ status: 'ok' }); // ส่งสัญญาณบอกหน้าบ้านว่า "ออกเรียบร้อย"
     });
 });
 
@@ -191,7 +165,7 @@ app.put('/api/requests/:id/status', (req, res) => {
                     
                     // แก้เลข IP ตรงนี้ให้เป็นของเครื่องตัวเองนะครับเพื่อให้กดจากมือถือได้ที่อยู่ในแลนวงเดียวกัน (ถ้าเทสแค่ในคอมก็ใช้ localhost ก็ได้)
                     // เช่น http://192.168.1.180:3000 หรือถ้าเทสแค่ในคอมใช้ http://localhost:3000 ก็ได้
-                    const webLink = `https://repair-up.onrender.com`; // ใช้บน Server จริง
+                    const webLink = `http://192.168.1.180:3000`; // ใช้บน Server จริง
 
                     // ส่งอีเมล
                     transporter.sendMail({
@@ -236,63 +210,6 @@ app.post('/api/review', (req, res) => {
         res.json({ status: 'ok', message: 'ขอบคุณสำหรับการรีวิว!' });
     });
 });
-
-//กดลิงก์ยืนยันอีเมล (Verify Link)
-app.get('/verify', (req, res) => {
-    const token = req.query.token;
-    if (!token) return res.send('<h1>❌ ลิงก์ไม่ถูกต้อง</h1>');
-
-    const updateSql = 'UPDATE users SET is_verified = 1, verification_token = NULL WHERE verification_token = ?';
-    db.query(updateSql, [token], (err, result) => {
-        if (err || result.affectedRows === 0) return res.send('<h1>❌ ลิงก์หมดอายุ หรือถูกใช้งานไปแล้ว</h1>');
-        res.send(`
-            <div style="text-align:center; padding:50px; font-family:sans-serif;">
-                <h1 style="color:#2e7d32;">✅ ยืนยันสำเร็จ!</h1>
-                <p>บัญชีของคุณเปิดใช้งานแล้ว</p>
-                //แก้ให้เป็นลิ้งก์ http://localhost:3000/login เมื่อเทสในเครื่อง
-                //แก้ให้เป็นลิ้งก์ https://repair-up.onrender.com เมื่อขึ้น Server จริง
-                <a href="https://repair-up.onrender.com" style="background:#6a1b9a; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;">เข้าสู่ระบบ</a>
-            </div>
-        `);
-    });
-});
-
-//ส่งอีเมลยืนยันซ้ำ
-app.post('/api/resend-verification', (req, res) => {
-    const { email } = req.body;
-    db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
-        if (results.length === 0) return res.json({ status: 'error', message: 'ไม่พบอีเมล' });
-
-        const user = results[0];
-        if (user.is_verified === 1) return res.json({ status: 'error', message: 'ยืนยันไปแล้ว' });
-                            //ตรงนี้ต้องแก้ลิงก์ให้ถูกต้องเหมือนข้างบน http://localhost:3000/verify?token=
-        const verifyLink = `https://repair-up.onrender.com/verify?token=${user.verification_token}`;
-        transporter.sendMail({
-            from: 'ระบบแจ้งซ่อม', to: email, subject: 'ยืนยันอีเมล (ส่งซ้ำ)',
-            html: `<a href="${verifyLink}">คลิกยืนยันอีเมล</a>`
-        }, (error) => {
-             if (error) return res.json({ status: 'error' });
-             res.json({ status: 'ok', message: 'ส่งอีเมลใหม่แล้ว!' });
-        });
-    });
-});
-
-// เพิ่มไว้ท้ายไฟล์ ก่อน app.listen
-// app.get('/test-email', (req, res) => {
-//     transporter.sendMail({
-//         from: `Test <${process.env.EMAIL_USER}>`,
-//         to: process.env.EMAIL_USER, // ส่งเข้าเมลตัวเองนี่แหละ
-//         subject: 'ทดสอบการส่งเมลจาก Render',
-//         text: 'ถ้าได้รับเมลนี้ แสดงว่าระบบส่งเมลใช้งานได้แล้ว! 🎉'
-//     }, (err, info) => {
-//         if (err) {
-//             console.error("❌ ส่งไม่ผ่าน:", err);
-//             return res.status(500).send(`<h1>ส่งไม่ผ่าน 😭</h1><pre>${err.message}</pre>`);
-//         }
-//         console.log("✅ ส่งสำเร็จ:", info);
-//         res.send(`<h1>ส่งสำเร็จ! 🎉</h1><pre>${JSON.stringify(info, null, 2)}</pre>`);
-//     });
-// });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

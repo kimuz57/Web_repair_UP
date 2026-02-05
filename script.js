@@ -1,54 +1,66 @@
 //แก้ IP ตรงนี้ให้ตรงกับเครื่องคุณ (ipconfig)
-// const BASE_URL = 'http://192.168.1.180:3000'; 
-const BASE_URL = "https://repair-up.onrender.com"; // ใช้บน Server จริง
+const BASE_URL = 'http://192.168.1.180:3000'; 
+// const BASE_URL = "https://repair-up.onrender.com"; // ใช้บน Server จริง
 const saltRounds = 10; // ความละเอียดในการเข้ารหัส
 // เช็คสถานะ Login เพื่อปรับ Navbar
 function checkLoginStatus() {
     try {
-        console.log("🔍 กำลังเช็คสถานะล็อกอิน...");
+        console.log("กำลังเช็คสถานะล็อกอิน...");
         const userStr = localStorage.getItem('user');
-        console.log("📦 ข้อมูลในเครื่อง:", userStr);
+        console.log("ข้อมูลในเครื่อง:", userStr);
 
         let user = null;
         if (userStr) {
             user = JSON.parse(userStr);
         }
 
+        // ดึง Element มาให้ครบ (เพิ่ม navProfile และ userNameDisplay)
         const navLogin = document.getElementById('nav-login');
-        const navSignup = document.getElementById('nav-signup');
         const navLogout = document.getElementById('nav-logout');
-
-        // ถ้าหาปุ่มไม่เจอ ให้จบการทำงาน (กัน Error)
-        if (!navLogin || !navSignup || !navLogout) {
-            console.warn("⚠️หาปุ่ม Navbar ไม่เจอ (อาจจะอยู่หน้านี้ไม่มี Navbar?)");
-            return;
-        }
-
+        const navProfile = document.getElementById('nav-profile');
+        const userNameDisplay = document.getElementById('user-name-display');
         if (user) {
-            console.log("✅ยืนยัน: ล็อกอินอยู่แล้ว (User ID: " + user.id + ")");
-            navLogin.style.display = 'none';
-            navSignup.style.display = 'none';
-            navLogout.style.display = 'block';
+            console.log("ยืนยัน: ล็อกอินอยู่แล้ว (User: " + user.first_name + ")");
+            
+            // ซ่อนปุ่มเข้าสู่ระบบ
+            if(navLogin) navLogin.style.display = 'none';
+            //โชว์ปุ่ม User
+            if(navLogout) navLogout.style.display = 'block';
+            if(navProfile) navProfile.style.display = 'block'; 
+            
+            //ใส่ชื่อ User
+            if(userNameDisplay) userNameDisplay.innerText = user.first_name;
+
         } else {
-            console.log("⚪ ยังไม่ล็อกอิน");
-            navLogin.style.display = 'block';
-            navSignup.style.display = 'block';
-            navLogout.style.display = 'none';
+            console.log("ยังไม่ล็อกอิน");
+            
+            // โชว์ปุ่มเข้าสู่ระบบ
+            if(navLogin) navLogin.style.display = 'block';
+            
+            // ซ่อนปุ่ม User
+            if(navLogout) navLogout.style.display = 'none';
+            if(navProfile) navProfile.style.display = 'none';
         }
     } catch (error) {
-        console.error("❌ เกิดข้อผิดพลาดใน checkLoginStatus:", error);
+        console.error("เกิดข้อผิดพลาดใน checkLoginStatus:", error);
     }
 }
-
-// ออกจากระบบ
 function logout() {
-    localStorage.removeItem('user');
-    alert('ออกจากระบบเรียบร้อย');
-    window.location.href = 'index.html'; //ย้ายกลับหน้าแรก
+    fetch('/api/logout')
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'ok') {
+            //ลบข้อมูลที่ค้างในเครื่อง ถ้าไม่ลบ มันจะจำว่า Login อยู่
+            localStorage.removeItem('user'); 
+            //สั่งย้ายไปหน้าหน้าแรก
+            window.location.href = 'index.html'; 
+        }
+    })
+    .catch(err => console.error(err));
 }
 // ฟังก์ชันสำหรับปุ่มในหน้าแรก (Services)
 function handleServiceClick(destination) {
-    // 1. เช็คว่าล็อกอินหรือยัง?
+    //เช็คว่าล็อกอินหรือยัง?
     const user = localStorage.getItem('user');
 
     if (!user) {
@@ -75,17 +87,14 @@ function toggleMenu() {
 }
 
 // ระบบสมาชิก (Authentication)
-// 1. Login
+//Login
 function handleLogin(event) {
     event.preventDefault();
-
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
-    
     // ดึงตัวจัดการข้อความสีแดง
     const emailError = document.getElementById('email-error');
     const resendContainer = document.getElementById('resend-container');
-    
     // รีเซ็ต Error เดิม
     if(emailError) { emailError.style.display = 'none'; emailError.innerText = ''; }
     if(resendContainer) resendContainer.innerHTML = ''; 
@@ -100,10 +109,8 @@ function handleLogin(event) {
         if (data.status === 'ok') {
             //ล็อกอินสำเร็จ
             localStorage.setItem('user', JSON.stringify(data.user));
-            
-            // ย้ายไปหน้า Dashboard.html
+            //ย้ายไปหน้า Dashboard.html
             window.location.href = 'dashboard.html'; 
-
         } else {
             //กรณี Error
             if(emailError) {
@@ -112,103 +119,11 @@ function handleLogin(event) {
             } else {
                 alert(data.message);
             }
-
-            // เช็คว่าต้องยืนยันตัวตนไหม
-            if (data.needs_verify === true && resendContainer) {
-                resendContainer.innerHTML = `
-                    <a href="#" onclick="resendVerification(event)" style="color: #6a1b9a; font-size: 0.8rem; text-decoration: none; margin-top: 10px; display: inline-block;">
-                        ยังไม่ได้รับอีเมล? <b>กดส่งอีกครั้ง</b>
-                    </a>
-                `;
-            }
         }
     })
     .catch(err => {
         console.error(err);
         alert('ไม่สามารถเชื่อมต่อ Server ได้');
-    });
-}
-
-// 2. Signup
-function handleSignup(event) {
-    event.preventDefault();
-
-    const firstName = document.getElementById('signup-firstname').value;
-    const lastName = document.getElementById('signup-lastname').value;
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
-    const confirmPassword = document.getElementById('signup-confirm-password').value;
-
-    const emailError = document.getElementById('signup-email-error');
-    const confirmError = document.getElementById('signup-confirm-error');
-
-    if(emailError) { emailError.style.display = 'none'; }
-    if(confirmError) { confirmError.style.display = 'none'; }
-
-    if (password !== confirmPassword) {
-        if(confirmError) {
-            confirmError.innerText = 'รหัสผ่านไม่ตรงกัน';
-            confirmError.style.display = 'block';
-        } else {
-            alert('รหัสผ่านไม่ตรงกัน');
-        }
-        return;
-    }
-
-    fetch(`${BASE_URL}/api/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ first_name: firstName, last_name: lastName, email, password })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'ok') {
-            document.getElementById('signup-success-modal').style.display = 'flex';
-            // window.location.href = 'login.html';
-        } else {
-            if (data.target === 'email' && emailError) {
-                emailError.innerText = data.message;
-                emailError.style.display = 'block';
-            } else {
-                alert('เกิดข้อผิดพลาด: ' + data.message);
-            }
-        }
-    })
-    .catch(err => {
-        console.error(err);
-        alert('ไม่สามารถเชื่อมต่อ Server ได้');
-    });
-}
-
-// ฟังก์ชันส่งอีเมลยืนยันซ้ำ
-function resendVerification(e) {
-    if(e) e.preventDefault();
-    const email = document.getElementById('login-email').value;
-    if (!email) {
-        alert('กรุณากรอกอีเมลก่อนครับ');
-        return;
-    }
-
-    const link = e.target;
-    const originalText = link.innerHTML;
-    link.innerHTML = '⏳ กำลังส่ง...';
-    link.style.pointerEvents = 'none';
-
-    fetch(`${BASE_URL}/api/resend-verification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email })
-    })
-    .then(response => response.json())
-    .then(data => {
-        alert(data.message);
-        link.innerHTML = originalText;
-        link.style.pointerEvents = 'auto';
-    })
-    .catch(err => {
-        alert('เชื่อมต่อ Server ไม่ได้');
-        link.innerHTML = originalText;
-        link.style.pointerEvents = 'auto';
     });
 }
 
@@ -216,7 +131,6 @@ function resendVerification(e) {
 // 1. ส่งเรื่องแจ้งซ่อม
 function handleSubmitRequest(e) {
     e.preventDefault();
-
     const userStr = localStorage.getItem('user');
     if (!userStr) {
         alert("กรุณาเข้าสู่ระบบก่อนแจ้งซ่อม!");
@@ -340,9 +254,9 @@ function renderRequests(filterStatus) {
                     <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee;">
                         <small style="color:#666;">แอดมิน: เปลี่ยนสถานะ</small>
                         <select onchange="updateStatus(${item.id}, this.value)" style="width:100%; padding: 5px; margin-top:5px; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;">
-                            <option value="received" ${item.status === 'received' ? 'selected' : ''}>🔴 รับเรื่องแล้ว</option>
-                            <option value="progress" ${item.status === 'progress' ? 'selected' : ''}>🟡 กำลังดำเนินการ</option>
-                            <option value="completed" ${item.status === 'completed' ? 'selected' : ''}>🟢 เสร็จสิ้น</option>
+                            <option value="received" ${item.status === 'received' ? 'selected' : ''}>รับเรื่องแล้ว</option>
+                            <option value="progress" ${item.status === 'progress' ? 'selected' : ''}>กำลังดำเนินการ</option>
+                            <option value="completed" ${item.status === 'completed' ? 'selected' : ''}>เสร็จสิ้น</option>
                         </select>
                     </div>
                 `;
@@ -409,7 +323,7 @@ function updateStatus(requestId, newStatus) {
     .then(res => res.json())
     .then(data => {
         if(data.status === 'ok') {
-            renderRequests('all'); // โหลดข้อมูลใหม่
+            renderRequests('all');
         } else {
             alert('เกิดข้อผิดพลาด: ' + data.message);
         }
@@ -485,23 +399,31 @@ function toggleMenu() {
     if(navMenu) navMenu.classList.toggle('active');
 }
 
-// 🚀 เริ่มต้นทำงาน (Main Execution) - สำคัญมาก!
+// เริ่มต้นทำงาน (Main Execution)
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. เช็ค Login
+    //เช็ค Login
     checkLoginStatus();
-
-    // 2. เช็คว่าอยู่หน้าไหน แล้วรันโค้ดของหน้านั้น
+    //เช็คว่าอยู่หน้าไหน แล้วรันโค้ดของหน้านั้น
     const path = window.location.pathname;
-
     //หน้า Dashboard
+    // หน้า Dashboard
     if (path.includes('dashboard.html')) {
-        // เช็คก่อนว่าล็อกอินยัง
-        if(!localStorage.getItem('user')) {
-            alert('กรุณาเข้าสู่ระบบ');
-            window.location.href = 'login.html';
-        } else {
-            renderRequests('all'); // โหลดข้อมูล
+        // 1. ดึงข้อมูลมาเช็คก่อน
+        const userStr = localStorage.getItem('user');
+        let modeText = "Guest Mode"; // ค่าเริ่มต้น: สมมติว่าเป็นคนนอก
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            // 2. เช็ค Role: ถ้าเป็น admin ให้ขึ้น Admin ถ้าไม่ใช่ให้ขึ้น User
+            if (user.role === 'admin') {
+                modeText = "Admin Mode";
+            } else {
+                modeText = "User Mode";
+            }
         }
+        // 3. แสดงผลแค่อย่างเดียว ตามสถานะจริง
+        console.log(`เข้าหน้า Dashboard (${modeText})`);
+        // 4. โหลดข้อมูล
+        renderRequests('all'); 
     }
 
     //หน้าแจ้งซ่อม (Add Request)
@@ -522,35 +444,36 @@ document.addEventListener('DOMContentLoaded', () => {
     setupImagePreview();
 });
 
+
 // สไลด์โชว์แบบ Infinite Loop พื้นหลัง home page
 function startSlideshow() {
     const slidesContainer = document.querySelector(".slides");
     const dots = document.querySelectorAll(".dot");
     let originalImages = document.querySelectorAll(".slides img"); // รูปชุดเดิม
 
-    // 1. เช็คความพร้อม
+    //เช็คความพร้อม
     if (!slidesContainer || originalImages.length === 0 || document.getElementById('first-clone')) return;
-    // 2. สร้างร่างแยก (Clone) หัว-ท้าย
+    //สร้างร่างแยก (Clone) หัว-ท้าย
     const firstClone = originalImages[0].cloneNode(true);
     const lastClone = originalImages[originalImages.length - 1].cloneNode(true);
 
     firstClone.id = 'first-clone';
     lastClone.id = 'last-clone';
 
-    slidesContainer.append(firstClone);   // เอารูปแรก(ปลอม) ไปต่อท้าย
-    slidesContainer.prepend(lastClone);   // เอารูปสุดท้าย(ปลอม) มาแปะหน้า
+    slidesContainer.append(firstClone);   // เอารูปแรก ไปต่อท้าย
+    slidesContainer.prepend(lastClone);   // เอารูปสุดท้าย มาแปะหน้า
 
     // ดึงรูปทั้งหมดใหม่ รวมตัว Clone ที่เพิ่งเพิ่ม
     const allSlides = document.querySelectorAll(".slides img");
 
-    // 3. ตั้งค่าเริ่มต้น
-    let counter = 1; // เริ่มที่ 1 เพราะ 0 คือรูปสุดท้ายปลอม
+    //ตั้งค่าเริ่มต้น
+    let counter = 1; // เริ่มที่ 1 เพราะ 0 คือรูปสุดท้ายที่ Clone มา
     const size = 100; // เลื่อนทีละ 100%
     slidesContainer.style.transform = 'translateX(' + (-size * counter) + '%)';
 
     let slideInterval;
 
-    // ฟังก์ชันเลื่อนภาพ
+    //ฟังก์ชันเลื่อนภาพ
     const nextSlide = () => {
         if (counter >= allSlides.length - 1) return;
         slidesContainer.style.transition = "transform 0.5s ease-in-out";
@@ -567,16 +490,16 @@ function startSlideshow() {
         updateDots();
     };
 
-    // 4.Transition End
+    //Transition End
     slidesContainer.addEventListener('transitionend', () => {
-        // ถ้าเลื่อนไปเจอ "รูปแรก(ปลอม)" -> วาร์ปกลับไป "รูปแรก(จริง)"
+        // ถ้าเลื่อนไปเจอ "รูปแรกที่clone" -> วาร์ปกลับไป "รูปแรก"
         if (allSlides[counter].id === 'first-clone') {
             slidesContainer.style.transition = "none"; //ปิด Animation ชั่วคราว
             counter = 1; // ย้ายตำแหน่ง
             slidesContainer.style.transform = 'translateX(' + (-size * counter) + '%)';
         }
 
-        // ถ้าเลื่อนถอยหลังไปเจอ "รูปท้าย(ปลอม)" -> วาร์ปไป "รูปท้าย(จริง)"
+        // ถ้าเลื่อนถอยหลังไปเจอ "รูปท้ายclone" -> วาร์ปไป "รูปท้ายจริง"
         if (allSlides[counter].id === 'last-clone') {
             slidesContainer.style.transition = "none";
             counter = allSlides.length - 2; // ตำแหน่งรูปสุดท้ายจริง
@@ -584,7 +507,7 @@ function startSlideshow() {
         }
     });
 
-    // 5.Dots
+    //Dots
     const updateDots = () => {
         dots.forEach(dot => dot.classList.remove('active'));
         // คำนวณ Index ของจุด ต้องลบ 1 เพราะมี Clone ตัวหน้า
@@ -595,7 +518,7 @@ function startSlideshow() {
         if (dots[dotIndex]) dots[dotIndex].classList.add('active');
     };
 
-    // 6. กดจุดเพื่อเปลี่ยนรูป
+    //กดจุดเพื่อเปลี่ยนรูป
     dots.forEach((dot, i) => {
         dot.addEventListener('click', () => {
             clearInterval(slideInterval); // หยุด Auto แป๊บนึง
@@ -606,31 +529,44 @@ function startSlideshow() {
             startAutoSlide(); // เริ่ม Auto ต่อ
         });
     });
-
-    // 7. ระบบสัมผัส Swipe
+    const touchZone = document.querySelector('.slider');   // 👈 ตัวใหม่! เอาไว้ดักจับนิ้ว (กรอบนอก)
+    //ระบบสัมผัส Swipe
     let startX = 0;
-    slidesContainer.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-        clearInterval(slideInterval);
+    let startY = 0;
+    // ใช้ touchZone (ตัวแม่ .slider) นะครับ ไม่ใช่ .slides
+    touchZone.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX; // เก็บ X เริ่มต้น
+        startY = e.touches[0].clientY; // เก็บ Y เริ่มต้น (เพิ่มบรรทัดนี้)
+        // หยุด Auto Slide ชั่วคราว (ถ้ามี)
+        if (typeof slideInterval !== 'undefined') clearInterval(slideInterval);
     });
-
-    slidesContainer.addEventListener('touchend', (e) => {
+    touchZone.addEventListener('touchend', (e) => {
         const endX = e.changedTouches[0].clientX;
-        const diff = startX - endX;
-
-        if (Math.abs(diff) > 50) { // ต้องลากเกิน 50px ถึงจะเปลี่ยน
-            if (diff > 0) nextSlide(); // ปัดซ้าย
-            else prevSlide(); // ปัดขวา
+        const endY = e.changedTouches[0].clientY; // เก็บ Y ตอนปล่อย
+        const diffX = startX - endX; // ระยะที่ลากแนวนอน
+        const diffY = startY - endY; // ระยะที่ลากแนวตั้ง
+        // 🔥 กฎเหล็ก: ต้องลาก "แนวนอน" เยอะกว่า "แนวตั้ง" ถึงจะนับ
+        // (Math.abs คือแปลงค่าลบเป็นบวก เพื่อดูแค่ระยะทาง)
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            // ถ้าแนวนอนชนะแล้ว ค่อยมาดูว่าลากยาวพอไหม (เกิน 50px)
+            if (Math.abs(diffX) > 50) {
+                if (diffX > 0) {
+                    nextSlide(); // ปัดซ้าย (ไปรูปถัดไป)
+                } else {
+                    prevSlide(); // ปัดขวา (ย้อนกลับ)
+                }
+            }
+            // ถ้าเข้ามาใน if นี้ แปลว่าตั้งใจปัดรูป -> กันไม่ให้หน้าจอมัน Scroll ตามนิ้ว
+            if (e.cancelable) e.preventDefault(); 
         }
-        startAutoSlide();
-    });
-
-    // เริ่ม Auto Slide
-    const startAutoSlide = () => {
-        clearInterval(slideInterval);
-        slideInterval = setInterval(nextSlide, 4000);
-    };
-
+        // เริ่ม Auto Slide ใหม่ (ถ้ามี)
+            startAutoSlide();
+        });
+        // เริ่ม Auto Slide
+        const startAutoSlide = () => {
+            clearInterval(slideInterval);
+            slideInterval = setInterval(nextSlide, 4000);
+        };
     startAutoSlide();
 }
 

@@ -329,7 +329,7 @@ body {
 }
 
 .form-container {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.4);
     backdrop-filter: blur(1px);
     -webkit-backdrop-filter: blur(5px);
     border: 1px solid rgb(255, 255, 255);
@@ -899,4 +899,14 @@ footer {
     border-radius: 8px;
     border: 1px dashed #ddd;
     text-align: center;
+}
+/* กำหนดสีดาวปกติ (ถ้ายังไม่ได้เลือก) */
+.fa-star {
+    color: #ddd;     /* สีเทา */
+    transition: color 0.2s; /* เพิ่มลูกเล่นให้เปลี่ยนสีนุ่มๆ */
+}
+
+/* 🔥 สำคัญมาก: กำหนดสีเมื่อมี class "active" */
+.fa-star.active {
+    color: #FFD700 !important; /* สีทอง (ใส่ !important เพื่อบังคับทับสีเดิม) */
 }
