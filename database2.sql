@@ -16,9 +16,9 @@
 
 
 -- Dumping database structure for up_repair_system
-/*DROP DATABASE IF EXISTS `up_repair_system`;*/
--- CREATE DATABASE IF NOT EXISTS `up_repair_system` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
--- USE `up_repair_system`;
+DROP DATABASE IF EXISTS `up_repair_system`;
+CREATE DATABASE IF NOT EXISTS `up_repair_system` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
+USE `up_repair_system`;
 
 -- Dumping structure for table up_repair_system.requests
 DROP TABLE IF EXISTS `requests`;
@@ -36,12 +36,13 @@ CREATE TABLE IF NOT EXISTS `requests` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `requests_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table up_repair_system.requests: ~2 rows (approximately)
+-- Dumping data for table up_repair_system.requests: ~3 rows (approximately)
 INSERT INTO `requests` (`id`, `user_id`, `building`, `problem_title`, `detail`, `image_path`, `status`, `created_at`, `rating`, `review_comment`) VALUES
-	(1, 1, 'ICT', 'แอร์ไม่เย็น ห้อง 202', 'เปิดมา 2 ชั่วโมงแล้วยังร้อน', NULL, 'received', '2026-01-23 13:58:16', NULL, NULL),
-	(2, 1, 'CE', 'ไฟทางเดินดับ', 'ชั้น 3 ตรงบันไดหนีไฟ', NULL, 'completed', '2026-01-23 13:58:16', NULL, NULL);
+	(1, 1, 'ICT', 'แอร์ไม่เย็น ห้อง 202', 'เปิดมา 2 ชั่วโมงแล้วยังร้อน', NULL, 'progress', '2026-01-23 13:58:16', NULL, NULL),
+	(2, 1, 'CE', 'ไฟทางเดินดับ', 'ชั้น 3 ตรงบันไดหนีไฟ', NULL, 'completed', '2026-01-23 13:58:16', NULL, NULL),
+	(13, 12, 'PKY', 'เีร', 'สเ่น\r\n', NULL, 'completed', '2026-02-05 17:48:26', NULL, NULL);
 
 -- Dumping structure for table up_repair_system.users
 DROP TABLE IF EXISTS `users`;
@@ -59,10 +60,11 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Dumping data for table up_repair_system.users: ~2 rows (approximately)
+-- Dumping data for table up_repair_system.users: ~3 rows (approximately)
 INSERT INTO `users` (`id`, `email`, `password`, `first_name`, `last_name`, `created_at`, `role`, `is_verified`, `verification_token`) VALUES
-	(1, 'test@up.ac.th', 'CPE1234', 'kit', 'lnwza', '2026-01-23 13:58:16', 'admin', 1, NULL),
-	(12, 'suphakitsaeyang9@gmail.com', '1234', 'kit', 'sae', '2026-01-27 09:21:32', 'user', 1, NULL);
+	(1, 'test@up.ac.th', '$2b$10$51tEaL5Tuz7.xf7bxs.hC.LxcTxwiy04P0rrOtxnCt8p9/a5Z5j5K', 'kit', 'lnwza', '2026-01-23 13:58:16', 'admin', 1, NULL),
+	(2, 'kit@up.ac.th', '$2b$10$hMFEJdH1dvWP4.La2AAoSOiaZs9PBAZi9aVEFD5Un5GTzJxGqp60.', '', '', '2026-02-01 14:42:48', 'user', 0, NULL),
+	(12, 'suphakitsaeyang9@gmail.com', '$2b$10$Kqpb11G6ZC2JB7J0LvxI5u.Bx/AYYS0R3HWCPinzytgSaXyL5qiTi', 'kit', 'sae', '2026-01-27 09:21:32', 'user', 1, NULL);
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
