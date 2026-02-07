@@ -83,7 +83,7 @@ const db = mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'up_repair_system' //เช็คชื่อ DB ให้ถูก
+    database: process.env.DB_NAME || //'up_repair_system_v2' //เช็คชื่อ DB ให้ถูก
 });
 app.use(express.static(__dirname));
 db.connect((err) => {
